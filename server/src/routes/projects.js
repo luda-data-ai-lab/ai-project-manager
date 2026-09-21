@@ -2,12 +2,15 @@ import { Router } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import {
   validateConfig,
+  validateDocument,
+  validateIssue,
   validateMemo,
+  validatePrompt,
   validateProject,
   validateTask,
 } from '../middleware/validate.js';
 
-export function projectRoutes({ projects, tasks, memos, configs }) {
+export function projectRoutes({ projects, tasks, memos, configs, prompts, issues, documents, db }) {
   const router = Router();
   const ensureProject = async (request, response) => {
     const project = await projects.get(request.params.id);
@@ -29,6 +32,69 @@ export function projectRoutes({ projects, tasks, memos, configs }) {
       const error = validateProject(req.body);
       if (error) return res.status(400).json({ success: false, error });
       res.status(201).json({ success: true, data: await projects.create(req.body) });
+    }),
+  );
+  router.get(
+    '/:pid/prompts',
+    asyncHandler(async (req, res) => {
+      if (!(await projects.get(req.params.pid)))
+        return res.status(404).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
+      res.json({ success: true, data: await prompts.list(req.params.pid) });
+    }),
+  );
+  router.post(
+    '/:pid/prompts',
+    asyncHandler(async (req, res) => {
+      if (!(await projects.get(req.params.pid)))
+        return res.status(404).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
+      const error = validatePrompt(req.body);
+      if (error) return res.status(400).json({ success: false, error });
+      if (req.body.task_id) {
+        const task = await db('tasks')
+          .where({ id: req.body.task_id, project_id: req.params.pid })
+          .first();
+        if (!task)
+          return res.status(400).json({ success: false, error: '연결할 작업을 찾을 수 없습니다.' });
+      }
+      res.status(201).json({ success: true, data: await prompts.create(req.params.pid, req.body) });
+    }),
+  );
+  router.get(
+    '/:pid/issues',
+    asyncHandler(async (req, res) => {
+      if (!(await projects.get(req.params.pid)))
+        return res.status(404).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
+      res.json({ success: true, data: await issues.list(req.params.pid, req.query) });
+    }),
+  );
+  router.post(
+    '/:pid/issues',
+    asyncHandler(async (req, res) => {
+      if (!(await projects.get(req.params.pid)))
+        return res.status(404).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
+      const error = validateIssue(req.body);
+      if (error) return res.status(400).json({ success: false, error });
+      res.status(201).json({ success: true, data: await issues.create(req.params.pid, req.body) });
+    }),
+  );
+  router.get(
+    '/:pid/documents',
+    asyncHandler(async (req, res) => {
+      if (!(await projects.get(req.params.pid)))
+        return res.status(404).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
+      res.json({ success: true, data: await documents.list(req.params.pid) });
+    }),
+  );
+  router.post(
+    '/:pid/documents',
+    asyncHandler(async (req, res) => {
+      if (!(await projects.get(req.params.pid)))
+        return res.status(404).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
+      const error = validateDocument(req.body);
+      if (error) return res.status(400).json({ success: false, error });
+      res
+        .status(201)
+        .json({ success: true, data: await documents.create(req.params.pid, req.body) });
     }),
   );
   router.get(

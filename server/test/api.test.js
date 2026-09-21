@@ -86,6 +86,90 @@ describe('DevTracker API', () => {
       false,
     );
   });
+  it('handles prompt logs and validates linked tasks', async () => {
+    const projectTask = await request(app)
+      .post(`/api/projects/${projectId}/tasks`)
+      .send({ title: '프롬프트 연결 작업' });
+    let response = await request(app).post(`/api/projects/${projectId}/prompts`).send({
+      task_id: projectTask.body.data.id,
+      prompt_text: '테스트 프롬프트',
+      tool: 'devin',
+    });
+    assert.equal(response.status, 201);
+    const promptId = response.body.data.id;
+    response = await request(app).get(`/api/projects/${projectId}/prompts`);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data[0].task_title, '프롬프트 연결 작업');
+    response = await request(app)
+      .post(`/api/projects/${projectId}/prompts`)
+      .send({ prompt_text: '   ' });
+    assert.equal(response.status, 400);
+    response = await request(app)
+      .post(`/api/projects/${projectId}/prompts`)
+      .send({ prompt_text: '잘못된 도구', tool: 'invalid' });
+    assert.equal(response.status, 400);
+    const otherProject = await request(app).post('/api/projects').send({ name: '다른 프로젝트' });
+    const otherTask = await request(app)
+      .post(`/api/projects/${otherProject.body.data.id}/tasks`)
+      .send({ title: '다른 작업' });
+    response = await request(app)
+      .post(`/api/projects/${projectId}/prompts`)
+      .send({ prompt_text: '잘못된 연결', task_id: otherTask.body.data.id });
+    assert.equal(response.status, 400);
+    response = await request(app).delete(`/api/prompts/${promptId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).delete(`/api/prompts/${promptId}`);
+    assert.equal(response.status, 404);
+  });
+  it('handles issue CRUD and validation', async () => {
+    let response = await request(app)
+      .post(`/api/projects/${projectId}/issues`)
+      .send({ title: '테스트 이슈', type: 'bug', priority: 'high' });
+    assert.equal(response.status, 201);
+    const issueId = response.body.data.id;
+    response = await request(app).get(`/api/projects/${projectId}/issues?status=open&type=bug`);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data[0].id, issueId);
+    response = await request(app).put(`/api/issues/${issueId}`).send({ title: '' });
+    assert.equal(response.status, 400);
+    response = await request(app).put(`/api/issues/${issueId}`).send({ status: 'invalid' });
+    assert.equal(response.status, 400);
+    response = await request(app).put(`/api/issues/${issueId}`).send({ status: 'done' });
+    assert.equal(response.body.data.status, 'done');
+    response = await request(app).delete(`/api/issues/${issueId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).delete(`/api/issues/${issueId}`);
+    assert.equal(response.status, 404);
+  });
+  it('handles documents without exposing content in lists', async () => {
+    let response = await request(app).post(`/api/projects/${projectId}/documents`).send({
+      title: '테스트 문서',
+      doc_type: 'spec',
+      content: '# 제목\n\n내용',
+      source_location: 'docs/test.md',
+    });
+    assert.equal(response.status, 201);
+    const documentId = response.body.data.id;
+    response = await request(app).get(`/api/projects/${projectId}/documents`);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data[0].content, undefined);
+    response = await request(app).get(`/api/documents/${documentId}`);
+    assert.equal(response.body.data.content, '# 제목\n\n내용');
+    assert.equal(response.body.data.version, 1);
+    response = await request(app)
+      .put(`/api/documents/${documentId}`)
+      .send({ content: '# 수정된 제목' });
+    assert.equal(response.body.data.content, '# 수정된 제목');
+    assert.equal(response.body.data.version, 2);
+    response = await request(app).delete(`/api/documents/${documentId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).get(`/api/documents/${documentId}`);
+    assert.equal(response.status, 404);
+    response = await request(app).put(`/api/documents/${documentId}`).send({ content: '없음' });
+    assert.equal(response.status, 404);
+    response = await request(app).delete(`/api/documents/${documentId}`);
+    assert.equal(response.status, 404);
+  });
   it('validates and returns not found', async () => {
     let response = await request(app).post('/api/projects').send({ name: '' });
     assert.equal(response.status, 400);

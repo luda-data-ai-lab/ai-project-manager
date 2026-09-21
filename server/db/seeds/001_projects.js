@@ -76,6 +76,81 @@ export async function seed(knex) {
     reference: null,
     recorded_at: time,
   });
+  await knex('prompt_logs').insert([
+    {
+      id: makeId(),
+      project_id: ex.id,
+      task_id: tasks[1].id,
+      tool: 'devin',
+      prompt_text: 'ERD 생성 로직에서 복합키 테이블을 안정적으로 매핑하는 방법을 제안해줘.',
+      result_summary: '복합키 메타데이터를 먼저 정규화하는 접근을 검토했다.',
+      commit_hash: null,
+      used_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: ex.id,
+      task_id: null,
+      tool: 'claude',
+      prompt_text: '이관 테스트 케이스의 누락된 경계 조건을 찾아줘.',
+      result_summary: '빈 셀과 중복 키 처리 케이스를 추가하기로 했다.',
+      commit_hash: null,
+      used_at: time,
+    },
+  ]);
+  await knex('issues').insert([
+    {
+      id: makeId(),
+      project_id: ex.id,
+      title: '복합키 매핑 실패',
+      description: '일부 복합키 테이블에서 대상 컬럼을 찾지 못한다.',
+      type: 'bug',
+      status: 'open',
+      priority: 'urgent',
+      assignee: 'self',
+      linked_task_id: tasks[3].id,
+      created_at: time,
+      updated_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: ex.id,
+      title: '이관 결과 요약 개선',
+      description: '배치별 처리 결과를 한눈에 볼 수 있도록 요약을 추가한다.',
+      type: 'improvement',
+      status: 'done',
+      priority: 'normal',
+      assignee: 'self',
+      linked_task_id: tasks[2].id,
+      created_at: time,
+      updated_at: time,
+    },
+  ]);
+  await knex('documents').insert([
+    {
+      id: makeId(),
+      project_id: ex.id,
+      title: 'ExMigrate 명세',
+      doc_type: 'spec',
+      content:
+        '# ExMigrate 명세\n\n## 목표\n\n- 엑셀 데이터를 DB로 이관합니다.\n- 이관 결과를 검증합니다.\n\n```ts\nawait migrateWorkbook(input);\n```',
+      source_location: 'docs/exmigrate-spec.md',
+      version: 1,
+      created_at: time,
+      updated_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: ex.id,
+      title: '개발일지',
+      doc_type: 'devlog',
+      content: '## 오늘 한 일\n\n복합키 매핑 로직을 점검했습니다.',
+      source_location: null,
+      version: 1,
+      created_at: time,
+      updated_at: time,
+    },
+  ]);
   await knex('environment_configs').insert({
     id: makeId(),
     project_id: ex.id,
