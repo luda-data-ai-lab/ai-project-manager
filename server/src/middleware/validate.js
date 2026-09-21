@@ -7,6 +7,8 @@ import {
   PROJECT_STATUSES,
   TASK_STATUSES,
   TOOLS,
+  TEST_METHODS,
+  TEST_RESULTS,
 } from '../models/enums.js';
 const valid = (value, values) => value === undefined || values.includes(value);
 export const validateProject = (body, partial = false) => {
@@ -43,5 +45,11 @@ export const validateDocument = (body, partial = false) => {
   if (!partial && !body.title?.trim()) return '문서 제목은 필수입니다.';
   if (body.title !== undefined && !String(body.title).trim()) return '문서 제목은 필수입니다.';
   if (!valid(body.doc_type, DOC_TYPES)) return '유효하지 않은 문서 유형입니다.';
+  return null;
+};
+export const validateTestRecord = (body) => {
+  if (!body.target?.trim()) return '테스트 대상은 필수입니다.';
+  if (!valid(body.method, TEST_METHODS)) return '유효하지 않은 테스트 방법입니다.';
+  if (!valid(body.result, TEST_RESULTS)) return '유효하지 않은 테스트 결과입니다.';
   return null;
 };

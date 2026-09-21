@@ -168,13 +168,14 @@ export function projectRoutes({ projects, tasks, memos, configs, prompts, issues
   for (const [name, service] of [
     ['env', configs.env],
     ['git', configs.git],
+    ['deploy', configs.deploy],
   ]) {
     router.get(
       `/:pid/${name}`,
       asyncHandler(async (req, res) => {
         if (!(await projects.get(req.params.pid)))
           return res.status(404).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
-        res.json({ success: true, data: await service.get(req.params.pid) });
+        res.json({ success: true, data: (await service.get(req.params.pid)) || null });
       }),
     );
     router.put(

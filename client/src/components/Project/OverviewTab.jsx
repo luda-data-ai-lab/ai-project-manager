@@ -40,6 +40,21 @@ export default function OverviewTab({ data, onRefresh }) {
                 {data.counts.done} / {data.counts.tasks} 완료
               </dd>
             </div>
+            {data.deploy?.service_url && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">배포</dt>
+                <dd className="truncate">
+                  <a
+                    href={data.deploy.service_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {data.deploy.service_url}
+                  </a>
+                </dd>
+              </div>
+            )}
           </dl>
         </Card>
         <Card>

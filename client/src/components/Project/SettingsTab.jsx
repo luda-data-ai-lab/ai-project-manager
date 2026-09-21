@@ -5,6 +5,7 @@ import { Button, Card, Field } from '../common';
 export default function SettingsTab({ id, data, onSaved }) {
   const [env, setEnv] = useState(data.env || {});
   const [git, setGit] = useState(data.git || {});
+  const [deploy, setDeploy] = useState(data.deploy || {});
   const save = async (type, values) => {
     await mutate(
       `/projects/${id}/${type}`,
@@ -17,10 +18,11 @@ export default function SettingsTab({ id, data, onSaved }) {
     <Card>
       <h2 className="mb-4 font-semibold">{title}</h2>
       <div className="space-y-3">
-        {fields.map(([key, label, placeholder]) => (
+        {fields.map(([key, label, placeholder, type = 'text']) => (
           <Field key={key} label={label}>
             <input
               className={inputClass}
+              type={type}
               placeholder={placeholder}
               value={values[key] || ''}
               onChange={(event) => setValues({ ...values, [key]: event.target.value })}
@@ -50,6 +52,13 @@ export default function SettingsTab({ id, data, onSaved }) {
         ['branch', '브랜치'],
         ['last_commit', '최근 커밋'],
         ['last_pushed_at', '마지막 push', '2026-09-20T16:00:00Z'],
+      ])}
+      {form('배포 정보', deploy, setDeploy, 'deploy', [
+        ['service_url', '서비스 URL'],
+        ['infra', '인프라', '예: local, vercel, aws'],
+        ['version', '버전'],
+        ['deployed_at', '배포일', '', 'date'],
+        ['deploy_method', '배포 방법', '예: manual, ci/cd'],
       ])}
     </div>
   );
