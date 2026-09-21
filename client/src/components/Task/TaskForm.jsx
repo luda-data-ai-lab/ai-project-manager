@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { inputClass } from '../../utils/styles';
 import { Button } from '../common';
 export default function TaskForm({ onSubmit }) {
-  const [values, setValues] = useState({ title: '', description: '' });
+  const [values, setValues] = useState({ title: '', description: '', due_date: '' });
   const submit = (event) => {
     event.preventDefault();
     if (!values.title.trim()) return;
     onSubmit(values);
-    setValues({ title: '', description: '' });
+    setValues({ title: '', description: '', due_date: '' });
   };
   return (
-    <form onSubmit={submit} className="mb-5 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+    <form onSubmit={submit} className="mb-5 grid gap-2 md:grid-cols-[1fr_1fr_auto_auto]">
       <input
         name="title"
         required
@@ -24,6 +24,13 @@ export default function TaskForm({ onSubmit }) {
         className={inputClass}
         value={values.description}
         onChange={(event) => setValues({ ...values, description: event.target.value })}
+      />
+      <input
+        type="date"
+        aria-label="마감일"
+        className={inputClass}
+        value={values.due_date}
+        onChange={(event) => setValues({ ...values, due_date: event.target.value })}
       />
       <Button>작업 추가</Button>
     </form>

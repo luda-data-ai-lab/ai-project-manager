@@ -50,6 +50,15 @@ describe('DevTracker API', () => {
     assert.equal(response.body.data.status, 'done');
     response = await request(app).put(`/api/tasks/${taskId}`).send({ title: '' });
     assert.equal(response.status, 400);
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tasks`)
+      .send({ title: '마감 작업', due_date: '2026-09-25' });
+    assert.equal(response.status, 201);
+    assert.equal(response.body.data.due_date, '2026-09-25');
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tasks`)
+      .send({ title: '잘못된 마감일', due_date: '2026/09/25' });
+    assert.equal(response.status, 400);
     response = await request(app).put(`/api/tasks/${taskId}`).send({ status: 'invalid' });
     assert.equal(response.status, 400);
     response = await request(app)
@@ -89,6 +98,26 @@ describe('DevTracker API', () => {
       response.body.data.calendar.some(
         (event) => event.project_id === soonResponse.body.data.id && event.type === 'target',
       ),
+    );
+  });
+  it('includes unfinished task due dates in the calendar', async () => {
+    const dueDate = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+    const doneDate = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+    const pending = await request(app)
+      .post(`/api/projects/${projectId}/tasks`)
+      .send({ title: '캘린더 마감 작업', due_date: dueDate });
+    const done = await request(app)
+      .post(`/api/projects/${projectId}/tasks`)
+      .send({ title: '완료 마감 작업', due_date: doneDate, status: 'done' });
+    const response = await request(app).get('/api/dashboard');
+    assert.ok(
+      response.body.data.calendar.some(
+        (event) => event.type === 'task_due' && event.task_id === pending.body.data.id,
+      ),
+    );
+    assert.equal(
+      response.body.data.calendar.some((event) => event.task_id === done.body.data.id),
+      false,
     );
   });
   it('validates and returns not found', async () => {

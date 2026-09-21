@@ -1,11 +1,23 @@
 import { Trash2 } from 'lucide-react';
 import { Card } from '../common';
 import { taskStatusLabels } from '../../utils/labels';
+import { daysUntil } from '../../utils/date';
 export default function TaskCard({ task, onStatus, onDelete }) {
   return (
     <Card className="mb-2 p-3">
       <p className="text-sm font-medium">{task.title}</p>
       {task.description && <p className="mt-1 text-xs text-slate-500">{task.description}</p>}
+      {task.due_date && (
+        <p
+          className={`mt-2 text-xs ${
+            task.status !== 'done' && daysUntil(task.due_date) < 0
+              ? 'font-medium text-red-600'
+              : 'text-slate-500'
+          }`}
+        >
+          마감 {task.due_date}
+        </p>
+      )}
       <div className="mt-3 flex gap-1">
         <select
           className="w-full rounded border border-slate-200 bg-white px-2 py-1 text-xs"

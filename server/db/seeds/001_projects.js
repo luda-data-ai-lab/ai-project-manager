@@ -18,6 +18,9 @@ export async function seed(knex) {
   await knex.raw('PRAGMA foreign_keys = ON');
   const time = now();
   const soon = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const dueDate = (day) =>
+    new Date(monthStart.getFullYear(), monthStart.getMonth(), day).toISOString().slice(0, 10);
   const projects = [
     {
       id: makeId(),
@@ -52,9 +55,9 @@ export async function seed(knex) {
   const tasks = [
     ['엑셀 데이터 구조 분석', 'done'],
     ['ERD 생성 로직 구현', 'in_progress'],
-    ['이관 테스트 작성', 'todo'],
-    ['복합키 테이블 매핑', 'blocked'],
-  ].map(([title, status], index) => ({
+    ['이관 테스트 작성', 'todo', dueDate(2)],
+    ['복합키 테이블 매핑', 'blocked', dueDate(3)],
+  ].map(([title, status, due_date], index) => ({
     id: makeId(),
     project_id: ex.id,
     title,
@@ -64,6 +67,7 @@ export async function seed(knex) {
     sort_order: index,
     created_at: time,
     updated_at: time,
+    due_date: due_date || null,
   }));
   await knex('tasks').insert(tasks);
   await knex('pause_resume_memos').insert({
