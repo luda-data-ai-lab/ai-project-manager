@@ -1,6 +1,7 @@
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
+import http from 'node:http';
 import knex from 'knex';
 import config from '../knexfile.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
@@ -11,6 +12,7 @@ import { taskService } from './services/taskService.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { projectRoutes } from './routes/projects.js';
 import { taskRoutes } from './routes/tasks.js';
+import { attachTerminal } from './terminal.js';
 
 dotenv.config();
 export function createApp(db) {
@@ -24,6 +26,9 @@ export function createApp(db) {
   app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
   app.use(express.json());
   app.get('/api/health', (_req, res) => res.json({ success: true, data: { status: 'ok' } }));
+  app.get('/api/terminal/status', (_req, res) =>
+    res.json({ success: true, data: { enabled: process.env.TERMINAL_ENABLED !== 'false' } }),
+  );
   app.use('/api/projects', projectRoutes(services));
   app.use('/api/tasks', taskRoutes(services));
   app.use('/api/dashboard', dashboardRoutes(db));
@@ -34,7 +39,9 @@ export function createApp(db) {
 const db = knex(config);
 if (process.env.NODE_ENV !== 'test') {
   const app = createApp(db);
+  const server = http.createServer(app);
+  attachTerminal(server, db);
   const port = Number(process.env.PORT || 3001);
-  app.listen(port, () => console.log(`DevTracker server listening on ${port}`));
+  server.listen(port, () => console.log(`DevTracker server listening on ${port}`));
 }
 export { db };
