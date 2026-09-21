@@ -20,7 +20,10 @@ export default function ProjectDetailPage() {
     api(`/projects/${id}`)
       .then(setData)
       .catch((error) => toast.error(error.message));
-  useEffect(load, [id]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
   if (!data) return <Spinner />;
   const updateTask = async (task, status) => {
     await mutate(
