@@ -1,3 +1,4 @@
 docs/
 client/dist/
+client/.vite/
 server/data/
