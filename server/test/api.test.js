@@ -134,6 +134,12 @@ describe('DevTracker API', () => {
     response = await request(app).get(`/api/projects/${projectId}/relations`);
     assert.equal(response.body.data.length, 2);
     assert.ok(response.body.data.some((relation) => relation.source_name === '테스트'));
+    response = await request(app).get('/api/projects/missing-project/relations');
+    assert.equal(response.status, 404);
+    assert.deepEqual(response.body, {
+      success: false,
+      error: '프로젝트를 찾을 수 없습니다.',
+    });
     response = await request(app).get(`/api/projects/${first.body.data.id}/relations`);
     assert.equal(response.body.data.length, 2);
     assert.ok(response.body.data.some((relation) => relation.target_name === '관계 대상 B'));
@@ -418,6 +424,19 @@ describe('DevTracker API', () => {
     assert.equal(response.status, 404);
   });
   it('exports and imports JSON and Markdown backups', async () => {
+    let response = await request(app).post('/api/costs').send({
+      project_id: projectId,
+      category: 'ai_tool',
+      vendor: 'Backup cost',
+      amount: 17.5,
+      currency: 'USD',
+      period: '2026-09',
+      memo: '백업 테스트 비용',
+    });
+    assert.equal(response.status, 201);
+    response = await request(app).get(`/api/projects/${projectId}/relations`);
+    assert.ok(response.body.data.length > 0);
+
     const exportResponse = await request(app).get('/api/export');
     assert.equal(exportResponse.status, 200);
     assert.match(exportResponse.headers['content-disposition'], /attachment/);
@@ -432,6 +451,8 @@ describe('DevTracker API', () => {
       'git_infos',
       'deploy_infos',
       'test_records',
+      'costs',
+      'project_relations',
     ])
       assert.ok(Array.isArray(exportResponse.body[table]));
     assert.ok(exportResponse.body.projects.some((project) => project.id === projectId));
@@ -452,11 +473,45 @@ describe('DevTracker API', () => {
       'test_records',
     ])
       assert.ok(projectExport.body[table].every((row) => row.project_id === projectId));
+    assert.ok(projectExport.body.costs.every((row) => row.project_id === projectId));
+    assert.ok(
+      projectExport.body.project_relations.every(
+        (row) => row.source_id === projectId || row.target_id === projectId,
+      ),
+    );
 
     const markdown = await request(app).get(`/api/export/projects/${projectId}/markdown`);
     assert.equal(markdown.status, 200);
     assert.match(markdown.text, /테스트/);
     assert.match(markdown.text, /첫 작업|마감 작업/);
+    assert.match(markdown.text, /## 비용/);
+    assert.match(markdown.text, /## 관계/);
+
+    response = await request(app)
+      .post('/api/import?mode=merge')
+      .send({
+        format: 'devtracker-export',
+        version: 1,
+        exported_at: new Date().toISOString(),
+        projects: [],
+        project_relations: [
+          {
+            id: 'missing-project-relation',
+            source_id: projectId,
+            target_id: 'missing-project',
+            relation_type: 'depends_on',
+            label: null,
+            created_at: new Date().toISOString(),
+          },
+        ],
+      });
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.counts.project_relations, 0);
+
+    response = await request(app).delete(`/api/projects/${projectId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).get(`/api/costs?project_id=${projectId}`);
+    assert.equal(response.body.data.length, 0);
 
     const importedProjectName = '가져온 프로젝트';
     const importedTaskId = 'imported-task-id';
@@ -479,7 +534,7 @@ describe('DevTracker API', () => {
         },
       ],
     };
-    let response = await request(app).post('/api/import?mode=merge').send(mergePayload);
+    response = await request(app).post('/api/import?mode=merge').send(mergePayload);
     assert.equal(response.status, 200);
     assert.equal(response.body.data.counts.tasks, mergePayload.tasks.length);
     response = await request(app).get(`/api/projects/${projectId}`);
@@ -487,6 +542,12 @@ describe('DevTracker API', () => {
     assert.ok(response.body.data.tasks.some((task) => task.id === importedTaskId));
     response = await request(app).get('/api/search?q=가져온');
     assert.ok(response.body.data.some((result) => result.entity_id === importedTaskId));
+    response = await request(app).get(`/api/costs?project_id=${projectId}`);
+    assert.equal(response.body.data.length, 1);
+    assert.equal(response.body.data[0].project_id, projectId);
+    assert.equal(response.body.data[0].amount, 17.5);
+    response = await request(app).get(`/api/projects/${projectId}/relations`);
+    assert.ok(response.body.data.length > 0);
 
     const replaceProjectId = 'replace-project-id';
     const replacePayload = {

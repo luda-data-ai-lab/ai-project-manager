@@ -11,6 +11,8 @@ const tables = [
   'git_infos',
   'deploy_infos',
   'test_records',
+  'costs',
+  'project_relations',
 ];
 
 const projectScopedTables = tables.filter((table) => table !== 'projects');
@@ -46,7 +48,14 @@ export function exportService(db, search) {
     const result = { format: 'devtracker-export', version: 1, exported_at: now() };
     result.projects = [project];
     for (const table of projectScopedTables) {
-      result[table] = await db(table).where({ project_id }).select('*');
+      if (table === 'project_relations') {
+        result[table] = await db(table)
+          .where('source_id', project_id)
+          .orWhere('target_id', project_id)
+          .select('*');
+      } else {
+        result[table] = await db(table).where({ project_id }).select('*');
+      }
     }
     return result;
   };
@@ -77,6 +86,17 @@ export function exportService(db, search) {
               .map((column) => [column, row[column]]),
           );
           if (!values.id) continue;
+          if (table === 'costs' && values.project_id !== null && values.project_id !== undefined) {
+            const project = await trx('projects').where({ id: values.project_id }).first();
+            if (!project) continue;
+          }
+          if (table === 'project_relations') {
+            const [source, target] = await Promise.all([
+              trx('projects').where({ id: values.source_id }).first(),
+              trx('projects').where({ id: values.target_id }).first(),
+            ]);
+            if (!source || !target) continue;
+          }
           const existing = await trx(table).where({ id: values.id }).first();
           if (existing) await trx(table).where({ id: values.id }).update(values);
           else await trx(table).insert(values);
@@ -91,17 +111,33 @@ export function exportService(db, search) {
   const exportMarkdown = async (project_id) => {
     const project = await db('projects').where({ id: project_id }).first();
     if (!project) return null;
-    const [tasks, memos, issues, prompts, documents, env, git, deploy, tests] = await Promise.all([
-      db('tasks').where({ project_id }).orderBy('sort_order').orderBy('created_at'),
-      db('pause_resume_memos').where({ project_id }).orderBy('recorded_at', 'desc'),
-      db('issues').where({ project_id }).orderBy('updated_at', 'desc'),
-      db('prompt_logs').where({ project_id }).orderBy('used_at', 'desc'),
-      db('documents').where({ project_id }).orderBy('updated_at', 'desc'),
-      db('environment_configs').where({ project_id }).first(),
-      db('git_infos').where({ project_id }).first(),
-      db('deploy_infos').where({ project_id }).first(),
-      db('test_records').where({ project_id }).orderBy('tested_at', 'desc'),
-    ]);
+    const [tasks, memos, issues, prompts, documents, env, git, deploy, tests, costs, relations] =
+      await Promise.all([
+        db('tasks').where({ project_id }).orderBy('sort_order').orderBy('created_at'),
+        db('pause_resume_memos').where({ project_id }).orderBy('recorded_at', 'desc'),
+        db('issues').where({ project_id }).orderBy('updated_at', 'desc'),
+        db('prompt_logs').where({ project_id }).orderBy('used_at', 'desc'),
+        db('documents').where({ project_id }).orderBy('updated_at', 'desc'),
+        db('environment_configs').where({ project_id }).first(),
+        db('git_infos').where({ project_id }).first(),
+        db('deploy_infos').where({ project_id }).first(),
+        db('test_records').where({ project_id }).orderBy('tested_at', 'desc'),
+        db('costs').where({ project_id }).orderBy('period', 'desc').orderBy('created_at', 'desc'),
+        db('project_relations')
+          .join('projects as source_projects', 'project_relations.source_id', 'source_projects.id')
+          .join('projects as target_projects', 'project_relations.target_id', 'target_projects.id')
+          .where((query) =>
+            query
+              .where('project_relations.source_id', project_id)
+              .orWhere('project_relations.target_id', project_id),
+          )
+          .select(
+            'project_relations.*',
+            'source_projects.name as source_name',
+            'target_projects.name as target_name',
+          )
+          .orderBy('project_relations.created_at', 'desc'),
+      ]);
 
     const sections = [`# ${project.name}\n`];
     const projectInfo = [
@@ -205,6 +241,28 @@ export function exportService(db, search) {
           .map(
             (test) =>
               `| ${markdownCell(test.tested_at)} | ${markdownCell(test.target)} | ${markdownCell(test.method)} | ${markdownCell(test.result)} | ${markdownCell(test.unresolved_issues)} |`,
+          )
+          .join('\n')}\n`,
+      );
+    }
+
+    if (costs.length) {
+      sections.push(
+        `## 비용\n| 기간 | 분류 | 업체 | 금액 통화 | 메모 |\n| --- | --- | --- | --- | --- |\n${costs
+          .map(
+            (cost) =>
+              `| ${markdownCell(cost.period)} | ${markdownCell(cost.category)} | ${markdownCell(cost.vendor)} | ${markdownCell(cost.amount)} ${markdownCell(cost.currency)} | ${markdownCell(cost.memo)} |`,
+          )
+          .join('\n')}\n`,
+      );
+    }
+
+    if (relations.length) {
+      sections.push(
+        `## 관계\n${relations
+          .map(
+            (relation) =>
+              `- ${markdownValue(relation.source_name)} —${markdownValue(relation.relation_type)}→ ${markdownValue(relation.target_name)}${relation.label ? ` (${markdownValue(relation.label)})` : ''}`,
           )
           .join('\n')}\n`,
       );
