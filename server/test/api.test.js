@@ -33,6 +33,12 @@ describe('DevTracker API', () => {
       .send({ purpose: '목적', tasks: [], latest_memo: {}, counts: {}, unknown: 'ignore me' });
     assert.equal(response.body.data.purpose, '목적');
     assert.equal(response.body.data.unknown, undefined);
+    response = await request(app).put(`/api/projects/${projectId}`).send({ name: '   ' });
+    assert.equal(response.status, 400);
+    response = await request(app).get(`/api/projects/${projectId}`);
+    assert.equal(response.body.data.name, '테스트');
+    response = await request(app).put(`/api/projects/${projectId}`).send({ status: 'paused' });
+    assert.equal(response.status, 200);
   });
   it('handles tasks, memos, env and git', async () => {
     let response = await request(app)
@@ -42,6 +48,8 @@ describe('DevTracker API', () => {
     const taskId = response.body.data.id;
     response = await request(app).put(`/api/tasks/${taskId}`).send({ status: 'done' });
     assert.equal(response.body.data.status, 'done');
+    response = await request(app).put(`/api/tasks/${taskId}`).send({ title: '' });
+    assert.equal(response.status, 400);
     response = await request(app).put(`/api/tasks/${taskId}`).send({ status: 'invalid' });
     assert.equal(response.status, 400);
     response = await request(app)

@@ -21,7 +21,6 @@ export default function ProjectsPage() {
       .catch((error) => toast.error(error.message));
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.status, filters.priority, filters.q]);
   return (
     <>
