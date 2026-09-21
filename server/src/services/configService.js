@@ -11,6 +11,7 @@ const columns = {
     'db_config_path',
   ],
   git_infos: ['repo_url', 'branch', 'last_commit', 'last_pushed_at'],
+  deploy_infos: ['service_url', 'infra', 'version', 'deployed_at', 'deploy_method'],
 };
 const upsert = (db, table) => async (project_id, input) => {
   const existing = await db(table).where({ project_id }).first();
@@ -36,6 +37,10 @@ export function configService(db) {
     git: {
       get: (id) => db('git_infos').where({ project_id: id }).first(),
       upsert: upsert(db, 'git_infos'),
+    },
+    deploy: {
+      get: (id) => db('deploy_infos').where({ project_id: id }).first(),
+      upsert: upsert(db, 'deploy_infos'),
     },
   };
 }
