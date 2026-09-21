@@ -17,13 +17,18 @@ export default function BackupPage() {
   const [file, setFile] = useState(null);
   const [counts, setCounts] = useState(null);
 
-  useEffect(() => {
+  const loadProjects = () =>
     api('/projects')
       .then((items) => {
         setProjects(items);
-        if (items[0]) setProjectId(items[0].id);
+        setProjectId((current) =>
+          items.some((item) => item.id === current) ? current : items[0]?.id || '',
+        );
       })
       .catch((error) => toast.error(error.message));
+
+  useEffect(() => {
+    loadProjects();
   }, []);
 
   const importBackup = async (event) => {
@@ -40,7 +45,10 @@ export default function BackupPage() {
         { method: 'POST', body: payload },
         '백업을 가져왔습니다.',
       );
-      if (result) setCounts(result.counts);
+      if (result) {
+        setCounts(result.counts);
+        await loadProjects();
+      }
     } catch (error) {
       toast.error(error.message);
     }
