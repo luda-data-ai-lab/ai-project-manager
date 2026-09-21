@@ -49,11 +49,12 @@ export function projectService(db, search) {
   const get = async (id) => {
     const project = await db('projects').where({ id }).first();
     if (!project) return null;
-    const [tasks, latest_memo, env, git] = await Promise.all([
+    const [tasks, latest_memo, env, git, deploy] = await Promise.all([
       db('tasks').where({ project_id: id }).orderBy('sort_order').orderBy('created_at'),
       db('pause_resume_memos').where({ project_id: id }).orderBy('recorded_at', 'desc').first(),
       db('environment_configs').where({ project_id: id }).first(),
       db('git_infos').where({ project_id: id }).first(),
+      db('deploy_infos').where({ project_id: id }).first(),
     ]);
     return {
       ...serializeProject(project),
@@ -63,6 +64,7 @@ export function projectService(db, search) {
         : null,
       env: env || null,
       git: git || null,
+      deploy: deploy || null,
       counts: { tasks: tasks.length, done: tasks.filter((task) => task.status === 'done').length },
     };
   };

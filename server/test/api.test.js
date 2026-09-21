@@ -66,6 +66,42 @@ describe('DevTracker API', () => {
     assert.equal(response.body.data.runtime, 'Node 20');
     response = await request(app).put(`/api/projects/${projectId}/git`).send({ branch: 'main' });
     assert.equal(response.body.data.branch, 'main');
+    response = await request(app).get(`/api/projects/${projectId}/deploy`);
+    assert.equal(response.body.data, null);
+    response = await request(app).put(`/api/projects/${projectId}/deploy`).send({
+      service_url: 'https://example.test',
+      infra: 'local',
+      deploy_method: 'manual',
+    });
+    assert.equal(response.body.data.infra, 'local');
+    response = await request(app).get(`/api/projects/${projectId}`);
+    assert.equal(response.body.data.deploy.service_url, 'https://example.test');
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tests`)
+      .send({ target: 'npm test', method: 'auto', result: 'pass' });
+    assert.equal(response.status, 201);
+    const testId = response.body.data.id;
+    response = await request(app).post(`/api/projects/${projectId}/tests`).send({
+      target: '브라우저 확인',
+      method: 'manual',
+      result: 'fail',
+      unresolved_issues: '모바일 확인 필요',
+    });
+    assert.equal(response.status, 201);
+    response = await request(app).get(`/api/projects/${projectId}/tests`);
+    assert.equal(response.body.data.length, 2);
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tests`)
+      .send({ target: '   ', result: 'pass' });
+    assert.equal(response.status, 400);
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tests`)
+      .send({ target: '잘못된 결과', result: 'broken' });
+    assert.equal(response.status, 400);
+    response = await request(app).delete(`/api/tests/${testId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).get(`/api/projects/${projectId}/tests`);
+    assert.equal(response.body.data.length, 1);
     response = await request(app).get('/api/dashboard');
     assert.ok(response.body.data.next_tasks);
   });
