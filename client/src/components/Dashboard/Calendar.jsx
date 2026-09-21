@@ -14,6 +14,11 @@ import { Link } from 'react-router-dom';
 import { Card } from '../common';
 
 const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+const eventStyles = {
+  start: ['bg-emerald-100 text-emerald-700', '시작'],
+  target: ['bg-rose-100 text-rose-700', '목표'],
+  task_due: ['bg-amber-100 text-amber-700', '작업 마감'],
+};
 
 export default function Calendar({ events = [] }) {
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
@@ -88,12 +93,16 @@ export default function Calendar({ events = [] }) {
               <div className="space-y-1">
                 {dayEvents.slice(0, 2).map((event) => (
                   <Link
-                    key={`${event.type}-${event.project_id}`}
-                    to={`/projects/${event.project_id}`}
-                    className={`block truncate rounded px-1 py-0.5 text-[10px] font-medium ${event.type === 'start' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}
-                    title={event.project_name}
+                    key={`${event.type}-${event.task_id || event.project_id}`}
+                    to={
+                      event.type === 'task_due'
+                        ? `/projects/${event.project_id}?tab=tasks`
+                        : `/projects/${event.project_id}`
+                    }
+                    className={`block truncate rounded px-1 py-0.5 text-[10px] font-medium ${eventStyles[event.type][0]}`}
+                    title={event.task_title || event.project_name}
                   >
-                    {event.type === 'start' ? '시작' : '목표'} · {event.project_name}
+                    {eventStyles[event.type][1]} · {event.task_title || event.project_name}
                   </Link>
                 ))}
                 {dayEvents.length > 2 && (
@@ -105,6 +114,14 @@ export default function Calendar({ events = [] }) {
             </div>
           );
         })}
+      </div>
+      <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
+        {Object.entries(eventStyles).map(([type, [color, label]]) => (
+          <span key={type} className="flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-sm ${color.split(' ')[0]}`} />
+            {label}
+          </span>
+        ))}
       </div>
     </Card>
   );
