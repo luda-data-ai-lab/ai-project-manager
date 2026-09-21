@@ -7,6 +7,7 @@ import { Button, EmptyState, Spinner } from '../components/common';
 import ProjectBadges from '../components/Project/ProjectBadges';
 import ProjectForm from '../components/Project/ProjectForm';
 import OverviewTab from '../components/Project/OverviewTab';
+import PreviewTab from '../components/Project/PreviewTab';
 import SettingsTab from '../components/Project/SettingsTab';
 import TaskBoard from '../components/Task/TaskBoard';
 import TaskForm from '../components/Task/TaskForm';
@@ -69,6 +70,7 @@ export default function ProjectDetailPage() {
   const tabs = [
     ['overview', '개요'],
     ['tasks', '작업'],
+    ['preview', '실행 화면'],
     ['prompts', '프롬프트'],
     ['documents', '문서'],
     ['issues', '이슈'],
@@ -115,6 +117,7 @@ export default function ProjectDetailPage() {
           <TaskBoard tasks={data.tasks} onStatus={updateTask} onDelete={deleteTask} />
         </>
       )}
+      {tab === 'preview' && <PreviewTab env={data.env} onGoSettings={() => setTab('settings')} />}
       {tab === 'settings' && <SettingsTab id={id} data={data} onSaved={load} />}
       {['prompts', 'documents', 'issues'].includes(tab) && (
         <EmptyState>Phase 2에서 제공됩니다.</EmptyState>
