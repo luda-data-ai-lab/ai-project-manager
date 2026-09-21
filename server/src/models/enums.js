@@ -16,3 +16,5 @@ export const DOC_TYPES = ['spec', 'requirement', 'design', 'devlog', 'readme', '
 export const TEST_METHODS = ['manual', 'auto', 'browser'];
 export const TEST_RESULTS = ['pass', 'fail', 'untested'];
 export const RELATION_TYPES = ['depends_on', 'shares_module', 'uses_api', 'precedes'];
+export const COST_CATEGORIES = ['ai_tool', 'server', 'other'];
+export const CURRENCIES = ['KRW', 'USD'];

@@ -10,8 +10,11 @@ import {
   TEST_METHODS,
   TEST_RESULTS,
   RELATION_TYPES,
+  COST_CATEGORIES,
+  CURRENCIES,
 } from '../models/enums.js';
 const valid = (value, values) => value === undefined || values.includes(value);
+const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
 export const validateProject = (body, partial = false) => {
   if (!partial && !body.name?.trim()) return '프로젝트 이름은 필수입니다.';
   if (body.name !== undefined && !String(body.name).trim()) return '프로젝트 이름은 필수입니다.';
@@ -60,5 +63,18 @@ export const validateRelation = (body) => {
   if (!body?.source_id || !body.target_id) return '프로젝트를 찾을 수 없습니다.';
   if (body.source_id === body.target_id) return '같은 프로젝트를 연결할 수 없습니다.';
   if (!valid(body.relation_type, RELATION_TYPES)) return '유효하지 않은 관계 유형입니다.';
+  return null;
+};
+export const validateCost = (body, partial = false) => {
+  if (!partial && !String(body.vendor || '').trim()) return '업체는 필수입니다.';
+  if (body.vendor !== undefined && !String(body.vendor).trim()) return '업체는 필수입니다.';
+  if (!valid(body.category, COST_CATEGORIES)) return '유효하지 않은 비용 분류입니다.';
+  if (!valid(body.currency, CURRENCIES)) return '유효하지 않은 통화입니다.';
+  if (!partial && body.amount === undefined) return '금액은 0 이상의 숫자여야 합니다.';
+  if (body.amount !== undefined && (!Number.isFinite(body.amount) || body.amount < 0))
+    return '금액은 0 이상의 숫자여야 합니다.';
+  if (!partial && !monthPattern.test(body.period || '')) return '기간 형식은 YYYY-MM 입니다.';
+  if (body.period !== undefined && !monthPattern.test(body.period))
+    return '기간 형식은 YYYY-MM 입니다.';
   return null;
 };

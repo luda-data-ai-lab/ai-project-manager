@@ -5,6 +5,7 @@ import {
   Menu,
   Search,
   Settings,
+  Wallet,
   Waypoints,
   X,
 } from 'lucide-react';
@@ -16,7 +17,8 @@ export default function Layout({ children }) {
   const links = [
     ['/', '대시보드', BarChart3],
     ['/projects', '프로젝트', FolderKanban],
-    ['/backup', '백업', DatabaseBackup],
+    ['/costs', '비용', Wallet],
+    ['/relations', '관계도', Waypoints],
   ];
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -32,7 +34,7 @@ export default function Layout({ children }) {
           </button>
         </div>
         <nav className="space-y-1">
-          {links.slice(0, -1).map(([to, label, Icon]) => (
+          {links.map(([to, label, Icon]) => (
             <NavLink
               key={to}
               to={to}
@@ -54,16 +56,6 @@ export default function Layout({ children }) {
           >
             <Search size={18} />
             검색
-          </NavLink>
-          <NavLink
-            to="/relations"
-            onClick={() => setOpen(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`
-            }
-          >
-            <Waypoints size={18} />
-            관계도
           </NavLink>
           <NavLink
             to="/backup"

@@ -288,6 +288,82 @@ describe('DevTracker API', () => {
     response = await request(app).delete(`/api/documents/${documentId}`);
     assert.equal(response.status, 404);
   });
+  it('handles cost records, filters, updates and summaries', async () => {
+    const otherProject = await request(app).post('/api/projects').send({ name: '비용 프로젝트' });
+    let response = await request(app).post('/api/costs').send({
+      project_id: projectId,
+      category: 'ai_tool',
+      vendor: 'Devin',
+      amount: 12.5,
+      currency: 'USD',
+      period: '2026-09',
+      memo: '에이전트',
+    });
+    assert.equal(response.status, 201);
+    const costId = response.body.data.id;
+    response = await request(app).post('/api/costs').send({
+      project_id: null,
+      category: 'server',
+      vendor: 'AWS',
+      amount: 8000,
+      currency: 'KRW',
+      period: '2026-08',
+    });
+    assert.equal(response.status, 201);
+    response = await request(app).get('/api/costs?period=2026-09');
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.length, 1);
+    assert.equal(response.body.data[0].project_name, '테스트');
+    response = await request(app).get(`/api/costs?project_id=${projectId}&category=ai_tool`);
+    assert.equal(response.body.data.length, 1);
+    response = await request(app).post('/api/costs').send({
+      vendor: '잘못된 금액',
+      category: 'other',
+      amount: -1,
+      period: '2026-09',
+    });
+    assert.equal(response.status, 400);
+    response = await request(app).post('/api/costs').send({
+      vendor: '잘못된 기간',
+      category: 'other',
+      amount: 1,
+      period: '2026/09',
+    });
+    assert.equal(response.status, 400);
+    response = await request(app).post('/api/costs').send({
+      project_id: 'missing-project',
+      vendor: '없는 프로젝트',
+      category: 'other',
+      amount: 1,
+      period: '2026-09',
+    });
+    assert.equal(response.status, 400);
+    response = await request(app)
+      .put(`/api/costs/${costId}`)
+      .send({ memo: '수정된 메모', amount: 13 });
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.amount, 13);
+    assert.equal(response.body.data.memo, '수정된 메모');
+    response = await request(app).get('/api/costs/summary?from=2026-08&to=2026-09');
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.total_by_currency.USD, 13);
+    assert.equal(response.body.data.total_by_currency.KRW, 8000);
+    assert.equal(
+      response.body.data.by_category.find(
+        (item) => item.category === 'ai_tool' && item.currency === 'USD',
+      ).total,
+      13,
+    );
+    assert.equal(
+      response.body.data.by_project.find((item) => item.project_id === null).project_name,
+      '공통',
+    );
+    response = await request(app).delete(`/api/costs/${costId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).get(`/api/costs?project_id=${projectId}`);
+    assert.equal(response.body.data.length, 0);
+    assert.equal(otherProject.body.data.name, '비용 프로젝트');
+  });
   it('searches indexed entities and updates the index', async () => {
     const searchProject = await request(app).post('/api/projects').send({
       name: '통합검색 프로젝트',

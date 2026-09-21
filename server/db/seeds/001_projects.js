@@ -4,6 +4,7 @@ export async function seed(knex) {
   await knex.raw('PRAGMA foreign_keys = OFF');
   for (const table of [
     'project_relations',
+    'costs',
     'test_records',
     'deploy_infos',
     'git_infos',
@@ -22,6 +23,10 @@ export async function seed(knex) {
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const dueDate = (day) =>
     new Date(monthStart.getFullYear(), monthStart.getMonth(), day).toISOString().slice(0, 10);
+  const month = (offset) =>
+    new Date(Date.UTC(new Date().getFullYear(), new Date().getMonth() + offset, 1))
+      .toISOString()
+      .slice(0, 7);
   const projects = [
     {
       id: makeId(),
@@ -206,6 +211,80 @@ export async function seed(knex) {
       result: 'fail',
       unresolved_issues: '모바일 레이아웃 확인 필요',
       tested_at: time,
+    },
+  ]);
+  await knex('costs').insert([
+    {
+      id: makeId(),
+      project_id: ex.id,
+      category: 'ai_tool',
+      vendor: 'Devin',
+      amount: 20,
+      currency: 'USD',
+      period: month(0),
+      memo: '개발 에이전트 사용료',
+      created_at: time,
+      updated_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: ex.id,
+      category: 'ai_tool',
+      vendor: 'Claude API',
+      amount: 15,
+      currency: 'USD',
+      period: month(-1),
+      memo: '프롬프트 API 사용료',
+      created_at: time,
+      updated_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: null,
+      category: 'ai_tool',
+      vendor: 'Cursor',
+      amount: 20,
+      currency: 'USD',
+      period: month(-2),
+      memo: 'IDE 구독',
+      created_at: time,
+      updated_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: ex.id,
+      category: 'server',
+      vendor: 'AWS EC2',
+      amount: 8.5,
+      currency: 'USD',
+      period: month(0),
+      memo: '개발 서버',
+      created_at: time,
+      updated_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: projects[1].id,
+      category: 'other',
+      vendor: '도메인',
+      amount: 15000,
+      currency: 'KRW',
+      period: month(-1),
+      memo: '도메인 갱신',
+      created_at: time,
+      updated_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: projects[1].id,
+      category: 'server',
+      vendor: 'Vercel',
+      amount: 5,
+      currency: 'USD',
+      period: month(-2),
+      memo: '프리뷰 배포',
+      created_at: time,
+      updated_at: time,
     },
   ]);
   await knex('project_relations').insert([
