@@ -14,16 +14,31 @@ export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
   const [tab, setTab] = useState('overview');
   const [edit, setEdit] = useState(false);
-  const load = () =>
-    api(`/projects/${id}`)
+  const load = () => {
+    setError(null);
+    return api(`/projects/${id}`)
       .then(setData)
-      .catch((error) => toast.error(error.message));
+      .catch((loadError) => {
+        toast.error(loadError.message);
+        setError(loadError.message);
+      });
+  };
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+  if (error && !data) {
+    return (
+      <EmptyState>
+        <p>{error}</p>
+        <Button className="mt-4" onClick={() => navigate('/projects')}>
+          프로젝트 목록으로
+        </Button>
+      </EmptyState>
+    );
+  }
   if (!data) return <Spinner />;
   const updateTask = async (task, status) => {
     await mutate(
