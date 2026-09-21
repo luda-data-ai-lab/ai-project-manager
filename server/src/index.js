@@ -52,11 +52,12 @@ if (process.env.NODE_ENV !== 'test') {
   const search = searchService(db);
   const app = createApp(db, search);
   const port = Number(process.env.PORT || 3001);
-  search
-    .reindex()
+  db.migrate
+    .latest()
+    .then(() => search.reindex())
     .then(() => app.listen(port, () => console.log(`DevTracker server listening on ${port}`)))
     .catch((error) => {
-      console.error('Failed to build search index', error);
+      console.error('Failed to start server', error);
       process.exitCode = 1;
     });
 }
