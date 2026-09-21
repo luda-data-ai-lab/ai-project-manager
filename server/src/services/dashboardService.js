@@ -22,7 +22,7 @@ export async function dashboardService(db) {
     .where('tasks.status', 'blocked')
     .select('tasks.*', 'projects.name as project_name')
     .orderBy('tasks.updated_at', 'desc');
-  const [tasks, memos, projects] = await Promise.all([
+  const [tasks, memos, projects, calendarProjects] = await Promise.all([
     db('tasks')
       .join('projects', 'tasks.project_id', 'projects.id')
       .where('tasks.updated_at', '>=', since)
@@ -44,6 +44,9 @@ export async function dashboardService(db) {
     db('projects')
       .where('updated_at', '>=', since)
       .select('id as project_id', 'name as project_name', 'name as title', 'updated_at as at'),
+    db('projects').where((query) => {
+      query.whereNotNull('start_date').orWhereNotNull('target_date');
+    }),
   ]);
   const recent_changes = [
     ...tasks.map((x) => ({ type: 'task', ...x })),
@@ -63,5 +66,24 @@ export async function dashboardService(db) {
       ...project,
       days_left: Math.ceil((new Date(project.target_date) - new Date(current)) / 86400000),
     }));
-  return { active_projects, next_tasks, blocked_tasks, recent_changes, due_soon };
+  const calendar = calendarProjects
+    .flatMap((project) => [
+      project.start_date && {
+        date: project.start_date.slice(0, 10),
+        type: 'start',
+        project_id: project.id,
+        project_name: project.name,
+        status: project.status,
+      },
+      project.target_date && {
+        date: project.target_date.slice(0, 10),
+        type: 'target',
+        project_id: project.id,
+        project_name: project.name,
+        status: project.status,
+      },
+    ])
+    .filter(Boolean)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return { active_projects, next_tasks, blocked_tasks, recent_changes, due_soon, calendar };
 }

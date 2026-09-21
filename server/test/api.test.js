@@ -85,6 +85,11 @@ describe('DevTracker API', () => {
       response.body.data.due_soon.some((project) => project.id === pausedResponse.body.data.id),
       false,
     );
+    assert.ok(
+      response.body.data.calendar.some(
+        (event) => event.project_id === soonResponse.body.data.id && event.type === 'target',
+      ),
+    );
   });
   it('validates and returns not found', async () => {
     let response = await request(app).post('/api/projects').send({ name: '' });
