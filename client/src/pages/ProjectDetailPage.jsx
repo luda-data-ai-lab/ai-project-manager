@@ -101,6 +101,20 @@ export default function ProjectDetailPage() {
           <Button variant="secondary" onClick={() => setEdit(true)}>
             수정
           </Button>
+          <a
+            href={`/api/export/projects/${id}`}
+            download
+            className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+          >
+            JSON
+          </a>
+          <a
+            href={`/api/export/projects/${id}/markdown`}
+            download
+            className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50"
+          >
+            MD
+          </a>
           <Button variant="danger" onClick={remove}>
             <Trash2 size={16} className="mr-1 inline" />
             삭제

@@ -1,4 +1,4 @@
-import { BarChart3, FolderKanban, Menu, Search, Settings, X } from 'lucide-react';
+import { BarChart3, DatabaseBackup, FolderKanban, Menu, Search, Settings, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
@@ -7,6 +7,7 @@ export default function Layout({ children }) {
   const links = [
     ['/', '대시보드', BarChart3],
     ['/projects', '프로젝트', FolderKanban],
+    ['/backup', '백업', DatabaseBackup],
   ];
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -22,7 +23,7 @@ export default function Layout({ children }) {
           </button>
         </div>
         <nav className="space-y-1">
-          {links.map(([to, label, Icon]) => (
+          {links.slice(0, -1).map(([to, label, Icon]) => (
             <NavLink
               key={to}
               to={to}
@@ -45,6 +46,19 @@ export default function Layout({ children }) {
             <Search size={18} />
             검색
           </NavLink>
+          {links.slice(-1).map(([to, label, Icon]) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+              }
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
         </nav>
       </aside>
       <div className="md:pl-64">
