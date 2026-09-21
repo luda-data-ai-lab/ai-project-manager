@@ -14,6 +14,7 @@ import { projectService } from './services/projectService.js';
 import { taskService } from './services/taskService.js';
 import { searchService } from './services/searchService.js';
 import { testRecordService } from './services/testRecordService.js';
+import { relationService } from './services/relationService.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { projectRoutes } from './routes/projects.js';
 import { documentRoutes } from './routes/documents.js';
@@ -24,6 +25,7 @@ import { attachTerminal } from './terminal.js';
 import { searchRoutes } from './routes/search.js';
 import { testRoutes } from './routes/tests.js';
 import { testRecordRoutes } from './routes/testRecords.js';
+import { projectRelationRoutes, relationRoutes } from './routes/relations.js';
 
 dotenv.config();
 export function createApp(db, search = searchService(db)) {
@@ -36,6 +38,7 @@ export function createApp(db, search = searchService(db)) {
     issues: issueService(db, search),
     documents: documentService(db, search),
     tests: testRecordService(db),
+    relations: relationService(db),
     db,
   };
   const app = express();
@@ -47,12 +50,14 @@ export function createApp(db, search = searchService(db)) {
   );
   app.use('/api/projects', projectRoutes(services));
   app.use('/api/projects', testRoutes(services));
+  app.use('/api/projects', projectRelationRoutes(services));
   app.use('/api/tasks', taskRoutes(services));
   app.use('/api/prompts', promptRoutes(services));
   app.use('/api/issues', issueRoutes(services));
   app.use('/api/documents', documentRoutes(services));
   app.use('/api/search', searchRoutes(search));
   app.use('/api/tests', testRecordRoutes(services));
+  app.use('/api/relations', relationRoutes(services));
   app.use('/api/dashboard', dashboardRoutes(db));
   app.use(notFound);
   app.use(errorHandler);

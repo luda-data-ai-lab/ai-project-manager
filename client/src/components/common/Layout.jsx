@@ -1,4 +1,4 @@
-import { BarChart3, FolderKanban, Menu, Search, Settings, X } from 'lucide-react';
+import { BarChart3, FolderKanban, Menu, Search, Settings, Waypoints, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
@@ -44,6 +44,16 @@ export default function Layout({ children }) {
           >
             <Search size={18} />
             검색
+          </NavLink>
+          <NavLink
+            to="/relations"
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+            }
+          >
+            <Waypoints size={18} />
+            관계도
           </NavLink>
         </nav>
       </aside>

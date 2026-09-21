@@ -16,6 +16,7 @@ import IssuesTab from '../components/Project/IssuesTab';
 import PromptsTab from '../components/Project/PromptsTab';
 import TestsTab from '../components/Project/TestsTab';
 import TerminalTab from '../components/Project/TerminalTab';
+import RelationsTab from '../components/Project/RelationsTab';
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -82,6 +83,7 @@ export default function ProjectDetailPage() {
     ['documents', '문서'],
     ['issues', '이슈'],
     ['tests', '테스트'],
+    ['relations', '관계'],
     ['settings', '설정'],
   ];
   return (
@@ -132,6 +134,7 @@ export default function ProjectDetailPage() {
       {tab === 'issues' && <IssuesTab id={id} tasks={data.tasks} />}
       {tab === 'documents' && <DocumentsTab id={id} />}
       {tab === 'tests' && <TestsTab id={id} />}
+      {tab === 'relations' && <RelationsTab id={id} />}
       {edit && <ProjectForm initial={data} onClose={() => setEdit(false)} onSaved={load} />}
     </>
   );

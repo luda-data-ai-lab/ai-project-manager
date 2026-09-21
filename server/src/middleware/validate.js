@@ -9,6 +9,7 @@ import {
   TOOLS,
   TEST_METHODS,
   TEST_RESULTS,
+  RELATION_TYPES,
 } from '../models/enums.js';
 const valid = (value, values) => value === undefined || values.includes(value);
 export const validateProject = (body, partial = false) => {
@@ -53,5 +54,11 @@ export const validateTestRecord = (body) => {
   if (!body.target?.trim()) return '테스트 대상은 필수입니다.';
   if (!valid(body.method, TEST_METHODS)) return '유효하지 않은 테스트 방법입니다.';
   if (!valid(body.result, TEST_RESULTS)) return '유효하지 않은 테스트 결과입니다.';
+  return null;
+};
+export const validateRelation = (body) => {
+  if (!body?.source_id || !body.target_id) return '프로젝트를 찾을 수 없습니다.';
+  if (body.source_id === body.target_id) return '같은 프로젝트를 연결할 수 없습니다.';
+  if (!valid(body.relation_type, RELATION_TYPES)) return '유효하지 않은 관계 유형입니다.';
   return null;
 };

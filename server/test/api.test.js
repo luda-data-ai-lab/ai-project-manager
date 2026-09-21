@@ -114,6 +114,54 @@ describe('DevTracker API', () => {
     response = await request(app).get('/api/dashboard');
     assert.ok(response.body.data.next_tasks);
   });
+  it('handles project relations and graph data', async () => {
+    const first = await request(app).post('/api/projects').send({ name: '관계 대상 A' });
+    const second = await request(app).post('/api/projects').send({ name: '관계 대상 B' });
+    let response = await request(app)
+      .post(`/api/projects/${projectId}/relations`)
+      .send({ target_id: first.body.data.id, relation_type: 'depends_on', label: '선행 필요' });
+    assert.equal(response.status, 201);
+    const firstRelationId = response.body.data.id;
+    response = await request(app)
+      .post(`/api/projects/${first.body.data.id}/relations`)
+      .send({ target_id: second.body.data.id, relation_type: 'shares_module' });
+    assert.equal(response.status, 201);
+    const secondRelationId = response.body.data.id;
+    response = await request(app)
+      .post(`/api/projects/${second.body.data.id}/relations`)
+      .send({ target_id: projectId, relation_type: 'uses_api' });
+    assert.equal(response.status, 201);
+    response = await request(app).get(`/api/projects/${projectId}/relations`);
+    assert.equal(response.body.data.length, 2);
+    assert.ok(response.body.data.some((relation) => relation.source_name === '테스트'));
+    response = await request(app).get(`/api/projects/${first.body.data.id}/relations`);
+    assert.equal(response.body.data.length, 2);
+    assert.ok(response.body.data.some((relation) => relation.target_name === '관계 대상 B'));
+    response = await request(app)
+      .post(`/api/projects/${projectId}/relations`)
+      .send({ target_id: projectId, relation_type: 'depends_on' });
+    assert.equal(response.status, 400);
+    assert.equal(response.body.error, '같은 프로젝트를 연결할 수 없습니다.');
+    response = await request(app)
+      .post(`/api/projects/${projectId}/relations`)
+      .send({ target_id: 'missing-project', relation_type: 'depends_on' });
+    assert.equal(response.status, 400);
+    assert.equal(response.body.error, '프로젝트를 찾을 수 없습니다.');
+    response = await request(app)
+      .post(`/api/projects/${projectId}/relations`)
+      .send({ target_id: first.body.data.id, relation_type: 'depends_on' });
+    assert.equal(response.status, 400);
+    assert.equal(response.body.error, '이미 존재하는 관계입니다.');
+    response = await request(app).get('/api/relations/graph');
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.nodes.length, 3);
+    assert.equal(response.body.data.edges.length, 3);
+    assert.ok(response.body.data.edges.every((edge) => !edge.source_name && !edge.target_name));
+    response = await request(app).delete(`/api/relations/${secondRelationId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).delete(`/api/relations/${firstRelationId}`);
+    assert.equal(response.status, 200);
+  });
   it('includes due-soon projects and excludes paused projects', async () => {
     const soon = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
     const soonResponse = await request(app)
@@ -297,5 +345,21 @@ describe('DevTracker API', () => {
     const response = await request(app).delete(`/api/projects/${projectId}`);
     assert.equal(response.status, 200);
     assert.equal((await db('tasks').where({ project_id: projectId })).length, 0);
+    assert.equal(
+      await db('project_relations')
+        .where({ source_id: projectId })
+        .orWhere({ target_id: projectId })
+        .count('* as count')
+        .first()
+        .then((row) => Number(row.count)),
+      0,
+    );
+    const graph = await request(app).get('/api/relations/graph');
+    assert.equal(
+      graph.body.data.edges.some(
+        (edge) => edge.source_id === projectId || edge.target_id === projectId,
+      ),
+      false,
+    );
   });
 });

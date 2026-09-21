@@ -15,3 +15,4 @@ export const ISSUE_PRIORITIES = ['urgent', 'high', 'normal', 'low'];
 export const DOC_TYPES = ['spec', 'requirement', 'design', 'devlog', 'readme', 'note'];
 export const TEST_METHODS = ['manual', 'auto', 'browser'];
 export const TEST_RESULTS = ['pass', 'fail', 'untested'];
+export const RELATION_TYPES = ['depends_on', 'shares_module', 'uses_api', 'precedes'];
