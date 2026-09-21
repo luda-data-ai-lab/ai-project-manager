@@ -1,0 +1,30 @@
+import { Link } from 'react-router-dom';
+import { Card } from '../common';
+import ProjectBadges from './ProjectBadges';
+import { formatDday } from '../../utils/date';
+export default function ProjectCard({ project }) {
+  const dday = formatDday(project.target_date);
+  return (
+    <Link to={`/projects/${project.id}`}>
+      <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-md">
+        <ProjectBadges {...project} />
+        <h2 className="mt-4 text-lg font-bold">{project.name}</h2>
+        <p className="mt-2 line-clamp-2 text-sm text-slate-500">{project.purpose}</p>
+        <div className="mt-5 flex flex-wrap gap-1">
+          {project.tags.map((tag) => (
+            <span className="text-xs text-slate-400" key={tag}>
+              #{tag}
+            </span>
+          ))}
+        </div>
+        {project.target_date && (
+          <p
+            className={`mt-4 text-xs ${dday.startsWith('D+') ? 'font-medium text-red-600' : 'text-slate-500'}`}
+          >
+            {project.target_date} · {dday}
+          </p>
+        )}
+      </Card>
+    </Link>
+  );
+}
