@@ -30,6 +30,12 @@ server/db/        Knex 마이그레이션과 시드
 docs/             기획 및 개발 명세
 ```
 
+## 문서
+
+- [사용자 매뉴얼](docs/UserGuide.md) — 설치, 화면별 사용법, 백업, 문제 해결
+- [개발 명세](docs/Spec.md)
+- [Devin 작업 기록](docs/Devin.md)
+
 ## API 요약
 
 - `GET/POST/PUT/DELETE /api/projects` 프로젝트 CRUD 및 상태·우선순위·검색 필터
