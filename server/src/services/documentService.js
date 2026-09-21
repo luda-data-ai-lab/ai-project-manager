@@ -19,7 +19,7 @@ const normalize = (input) => {
   return values;
 };
 
-export function documentService(db) {
+export function documentService(db, search) {
   const list = (project_id) =>
     db('documents').where({ project_id }).select(listColumns).orderBy('updated_at', 'desc');
   const get = (id) => db('documents').where({ id }).first();
@@ -36,6 +36,7 @@ export function documentService(db) {
       doc_type: input.doc_type || 'note',
     };
     await db('documents').insert(document);
+    await search?.index('document', document);
     return document;
   };
   const update = async (id, input) => {
@@ -49,8 +50,14 @@ export function documentService(db) {
       values.version = (current.version || 1) + 1;
     values.updated_at = now();
     await db('documents').where({ id }).update(values);
-    return get(id);
+    const document = await get(id);
+    await search?.index('document', document);
+    return document;
   };
-  const remove = (id) => db('documents').where({ id }).del();
+  const remove = async (id) => {
+    const changed = await db('documents').where({ id }).del();
+    if (changed) await search?.remove('document', id);
+    return changed;
+  };
   return { list, get, create, update, remove };
 }

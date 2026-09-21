@@ -2,7 +2,7 @@ import { makeId, nullable, now, pick } from './helpers.js';
 
 const columns = ['task_id', 'tool', 'prompt_text', 'result_summary', 'commit_hash', 'used_at'];
 
-export function promptService(db) {
+export function promptService(db, search) {
   const list = (project_id) =>
     db('prompt_logs')
       .leftJoin('tasks', 'prompt_logs.task_id', 'tasks.id')
@@ -22,8 +22,13 @@ export function promptService(db) {
       used_at: input.used_at || now(),
     };
     await db('prompt_logs').insert(prompt);
+    await search?.index('prompt', prompt);
     return { ...prompt, task_title: null };
   };
-  const remove = (id) => db('prompt_logs').where({ id }).del();
+  const remove = async (id) => {
+    const changed = await db('prompt_logs').where({ id }).del();
+    if (changed) await search?.remove('prompt', id);
+    return changed;
+  };
   return { list, create, remove };
 }

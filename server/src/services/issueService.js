@@ -18,7 +18,7 @@ const normalize = (input) => {
   return values;
 };
 
-export function issueService(db) {
+export function issueService(db, search) {
   const list = (project_id, filters = {}) => {
     const query = db('issues')
       .leftJoin('tasks', 'issues.linked_task_id', 'tasks.id')
@@ -44,13 +44,21 @@ export function issueService(db) {
       assignee: input.assignee || 'self',
     };
     await db('issues').insert(issue);
+    await search?.index('issue', issue);
     return issue;
   };
   const update = async (id, input) => {
     const values = { ...normalize(input), updated_at: now() };
     const changed = await db('issues').where({ id }).update(values);
-    return changed ? db('issues').where({ id }).first() : null;
+    if (!changed) return null;
+    const issue = await db('issues').where({ id }).first();
+    await search?.index('issue', issue);
+    return issue;
   };
-  const remove = (id) => db('issues').where({ id }).del();
+  const remove = async (id) => {
+    const changed = await db('issues').where({ id }).del();
+    if (changed) await search?.remove('issue', id);
+    return changed;
+  };
   return { list, create, update, remove };
 }

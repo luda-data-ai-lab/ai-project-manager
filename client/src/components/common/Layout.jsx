@@ -35,10 +35,16 @@ export default function Layout({ children }) {
               {label}
             </NavLink>
           ))}
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-400">
+          <NavLink
+            to="/search"
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+            }
+          >
             <Search size={18} />
-            검색 <span className="ml-auto text-[10px]">준비 중</span>
-          </div>
+            검색
+          </NavLink>
         </nav>
       </aside>
       <div className="md:pl-64">
