@@ -1,4 +1,14 @@
-import { BarChart3, FolderKanban, Menu, Search, Settings, Wallet, X } from 'lucide-react';
+import {
+  BarChart3,
+  DatabaseBackup,
+  FolderKanban,
+  Menu,
+  Search,
+  Settings,
+  Wallet,
+  Waypoints,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
@@ -8,6 +18,7 @@ export default function Layout({ children }) {
     ['/', '대시보드', BarChart3],
     ['/projects', '프로젝트', FolderKanban],
     ['/costs', '비용', Wallet],
+    ['/relations', '관계도', Waypoints],
   ];
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -45,6 +56,16 @@ export default function Layout({ children }) {
           >
             <Search size={18} />
             검색
+          </NavLink>
+          <NavLink
+            to="/backup"
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`
+            }
+          >
+            <DatabaseBackup size={18} />
+            백업
           </NavLink>
         </nav>
       </aside>

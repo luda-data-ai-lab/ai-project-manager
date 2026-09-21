@@ -15,6 +15,7 @@ import { taskService } from './services/taskService.js';
 import { searchService } from './services/searchService.js';
 import { testRecordService } from './services/testRecordService.js';
 import { costService } from './services/costService.js';
+import { exportService } from './services/exportService.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { projectRoutes } from './routes/projects.js';
 import { documentRoutes } from './routes/documents.js';
@@ -26,6 +27,7 @@ import { searchRoutes } from './routes/search.js';
 import { testRoutes } from './routes/tests.js';
 import { testRecordRoutes } from './routes/testRecords.js';
 import { costRoutes } from './routes/costs.js';
+import { exportRoutes, importRoutes } from './routes/export.js';
 
 dotenv.config();
 export function createApp(db, search = searchService(db)) {
@@ -39,11 +41,12 @@ export function createApp(db, search = searchService(db)) {
     documents: documentService(db, search),
     tests: testRecordService(db),
     costs: costService(db),
+    exporter: exportService(db, search),
     db,
   };
   const app = express();
   app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
-  app.use(express.json());
+  app.use(express.json({ limit: '20mb' }));
   app.get('/api/health', (_req, res) => res.json({ success: true, data: { status: 'ok' } }));
   app.get('/api/terminal/status', (_req, res) =>
     res.json({ success: true, data: { enabled: process.env.TERMINAL_ENABLED !== 'false' } }),
@@ -57,6 +60,8 @@ export function createApp(db, search = searchService(db)) {
   app.use('/api/search', searchRoutes(search));
   app.use('/api/tests', testRecordRoutes(services));
   app.use('/api/costs', costRoutes(services));
+  app.use('/api/export', exportRoutes(services));
+  app.use('/api/import', importRoutes(services));
   app.use('/api/dashboard', dashboardRoutes(db));
   app.use(notFound);
   app.use(errorHandler);
