@@ -7,6 +7,7 @@ import NextTasks from '../components/Dashboard/NextTasks';
 import BlockedTasks from '../components/Dashboard/BlockedTasks';
 import RecentChanges from '../components/Dashboard/RecentChanges';
 import DueSoon from '../components/Dashboard/DueSoon';
+import Calendar from '../components/Dashboard/Calendar';
 export default function DashboardPage() {
   const [data, setData] = useState(null);
   useEffect(() => {
@@ -26,6 +27,9 @@ export default function DashboardPage() {
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <RecentChanges changes={data.recent_changes} />
         <DueSoon projects={data.due_soon} />
+      </div>
+      <div className="mt-5">
+        <Calendar events={data.calendar} />
       </div>
     </>
   );

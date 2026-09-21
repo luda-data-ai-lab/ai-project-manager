@@ -20,7 +20,7 @@ const normalize = (input) => {
   return values;
 };
 
-export function projectService(db) {
+export function projectService(db, search) {
   const create = async (input) => {
     const time = now();
     const project = {
@@ -33,6 +33,7 @@ export function projectService(db) {
       tags: JSON.stringify(input.tags || []),
     };
     await db('projects').insert(project);
+    await search?.index('project', project);
     return serializeProject(project);
   };
   const list = async (filters = {}) => {
@@ -48,11 +49,12 @@ export function projectService(db) {
   const get = async (id) => {
     const project = await db('projects').where({ id }).first();
     if (!project) return null;
-    const [tasks, latest_memo, env, git] = await Promise.all([
+    const [tasks, latest_memo, env, git, deploy] = await Promise.all([
       db('tasks').where({ project_id: id }).orderBy('sort_order').orderBy('created_at'),
       db('pause_resume_memos').where({ project_id: id }).orderBy('recorded_at', 'desc').first(),
       db('environment_configs').where({ project_id: id }).first(),
       db('git_infos').where({ project_id: id }).first(),
+      db('deploy_infos').where({ project_id: id }).first(),
     ]);
     return {
       ...serializeProject(project),
@@ -62,14 +64,21 @@ export function projectService(db) {
         : null,
       env: env || null,
       git: git || null,
+      deploy: deploy || null,
       counts: { tasks: tasks.length, done: tasks.filter((task) => task.status === 'done').length },
     };
   };
   const update = async (id, input) => {
     const values = { ...normalize(input), updated_at: now() };
     const changed = await db('projects').where({ id }).update(values);
-    return changed ? get(id) : null;
+    if (!changed) return null;
+    const project = await db('projects').where({ id }).first();
+    await search?.index('project', project);
+    return get(id);
   };
-  const remove = async (id) => db('projects').where({ id }).del();
+  const remove = async (id) => {
+    await search?.removeProject(id);
+    return db('projects').where({ id }).del();
+  };
   return { create, list, get, update, remove };
 }

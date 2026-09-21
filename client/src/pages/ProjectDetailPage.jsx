@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { api, mutate } from '../utils/api';
 import { Button, EmptyState, Spinner } from '../components/common';
 import ProjectBadges from '../components/Project/ProjectBadges';
 import ProjectForm from '../components/Project/ProjectForm';
 import OverviewTab from '../components/Project/OverviewTab';
+import PreviewTab from '../components/Project/PreviewTab';
 import SettingsTab from '../components/Project/SettingsTab';
 import TaskBoard from '../components/Task/TaskBoard';
 import TaskForm from '../components/Task/TaskForm';
+import DocumentsTab from '../components/Project/DocumentsTab';
+import IssuesTab from '../components/Project/IssuesTab';
+import PromptsTab from '../components/Project/PromptsTab';
+import TestsTab from '../components/Project/TestsTab';
 import TerminalTab from '../components/Project/TerminalTab';
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState(() => searchParams.get('tab') || 'overview');
   const [edit, setEdit] = useState(false);
   const load = () => {
     setError(null);
@@ -70,10 +76,12 @@ export default function ProjectDetailPage() {
   const tabs = [
     ['overview', '개요'],
     ['tasks', '작업'],
+    ['preview', '실행 화면'],
     ['terminal', '터미널'],
     ['prompts', '프롬프트'],
     ['documents', '문서'],
     ['issues', '이슈'],
+    ['tests', '테스트'],
     ['settings', '설정'],
   ];
   return (
@@ -117,11 +125,13 @@ export default function ProjectDetailPage() {
           <TaskBoard tasks={data.tasks} onStatus={updateTask} onDelete={deleteTask} />
         </>
       )}
+      {tab === 'preview' && <PreviewTab env={data.env} onGoSettings={() => setTab('settings')} />}
       {tab === 'terminal' && <TerminalTab projectId={id} env={data.env} />}
       {tab === 'settings' && <SettingsTab id={id} data={data} onSaved={load} />}
-      {['prompts', 'documents', 'issues'].includes(tab) && (
-        <EmptyState>Phase 2에서 제공됩니다.</EmptyState>
-      )}
+      {tab === 'prompts' && <PromptsTab id={id} tasks={data.tasks} />}
+      {tab === 'issues' && <IssuesTab id={id} tasks={data.tasks} />}
+      {tab === 'documents' && <DocumentsTab id={id} />}
+      {tab === 'tests' && <TestsTab id={id} />}
       {edit && <ProjectForm initial={data} onClose={() => setEdit(false)} onSaved={load} />}
     </>
   );
