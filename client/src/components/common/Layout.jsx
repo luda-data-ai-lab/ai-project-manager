@@ -1,4 +1,4 @@
-import { BarChart3, FolderKanban, Menu, Search, Settings, X } from 'lucide-react';
+import { BarChart3, FolderKanban, Menu, Search, Settings, Wallet, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
@@ -7,6 +7,7 @@ export default function Layout({ children }) {
   const links = [
     ['/', '대시보드', BarChart3],
     ['/projects', '프로젝트', FolderKanban],
+    ['/costs', '비용', Wallet],
   ];
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">

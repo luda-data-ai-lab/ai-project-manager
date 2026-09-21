@@ -1,15 +1,27 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, mutate } from '../../utils/api';
+import { formatMoney } from '../../utils/format';
 import { Card, EmptyState } from '../common';
 import MemoBox from './MemoBox';
 import MemoForm from './MemoForm';
 export default function OverviewTab({ data, onRefresh }) {
   const [memos, setMemos] = useState([]);
+  const [costs, setCosts] = useState([]);
   useEffect(() => {
     api(`/projects/${data.id}/memos`)
       .then(setMemos)
       .catch(() => {});
   }, [data.id]);
+  useEffect(() => {
+    api(`/costs?project_id=${data.id}`)
+      .then(setCosts)
+      .catch(() => {});
+  }, [data.id]);
+  const costTotals = costs.reduce((totals, cost) => {
+    totals[cost.currency] = (totals[cost.currency] || 0) + cost.amount;
+    return totals;
+  }, {});
   const addMemo = async (values) => {
     await mutate(
       `/projects/${data.id}/memos`,
@@ -52,6 +64,22 @@ export default function OverviewTab({ data, onRefresh }) {
                   >
                     {data.deploy.service_url}
                   </a>
+                </dd>
+              </div>
+            )}
+            {costs.length > 0 && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-500">비용</dt>
+                <dd className="flex gap-2">
+                  {Object.entries(costTotals).map(([currency, total]) => (
+                    <Link
+                      key={currency}
+                      to={`/costs?project=${data.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {formatMoney(total, currency)}
+                    </Link>
+                  ))}
                 </dd>
               </div>
             )}
