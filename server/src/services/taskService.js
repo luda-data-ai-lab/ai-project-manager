@@ -1,4 +1,6 @@
-import { makeId, now } from './helpers.js';
+import { makeId, nullable, now, pick } from './helpers.js';
+
+const taskColumns = ['title', 'description', 'status', 'assignee', 'sort_order'];
 
 export function taskService(db) {
   const list = (project_id) =>
@@ -8,22 +10,23 @@ export function taskService(db) {
     const task = {
       id: makeId(),
       project_id,
+      created_at: time,
+      updated_at: time,
+      ...pick(input, taskColumns),
       title: input.title,
-      description: input.description || null,
+      description: nullable(input.description || null),
       status: input.status || 'todo',
       assignee: input.assignee || 'self',
       sort_order: input.sort_order ?? 0,
-      created_at: time,
-      updated_at: time,
     };
     await db('tasks').insert(task);
     return task;
   };
   const update = async (id, input) => {
-    const values = { ...input, updated_at: now() };
-    delete values.id;
-    delete values.project_id;
-    delete values.created_at;
+    const values = pick(input, taskColumns);
+    if (Object.prototype.hasOwnProperty.call(values, 'description'))
+      values.description = nullable(values.description);
+    values.updated_at = now();
     const changed = await db('tasks').where({ id }).update(values);
     return changed ? db('tasks').where({ id }).first() : null;
   };

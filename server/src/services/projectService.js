@@ -1,19 +1,36 @@
-import { makeId, now, serializeProject } from './helpers.js';
+import { makeId, nullable, now, pick, serializeProject } from './helpers.js';
+
+const projectColumns = [
+  'name',
+  'purpose',
+  'status',
+  'priority',
+  'start_date',
+  'target_date',
+  'tags',
+];
+const normalize = (input) => {
+  const values = pick(input, projectColumns);
+  for (const column of ['purpose', 'start_date', 'target_date']) {
+    if (Object.prototype.hasOwnProperty.call(values, column))
+      values[column] = nullable(values[column]);
+  }
+  if (Object.prototype.hasOwnProperty.call(values, 'tags'))
+    values.tags = JSON.stringify(values.tags || []);
+  return values;
+};
 
 export function projectService(db) {
   const create = async (input) => {
     const time = now();
     const project = {
       id: makeId(),
-      name: input.name,
-      purpose: input.purpose || null,
-      status: input.status || 'planning',
-      priority: input.priority || 'medium',
-      start_date: input.start_date || null,
-      target_date: input.target_date || null,
-      tags: JSON.stringify(input.tags || []),
       created_at: time,
       updated_at: time,
+      ...normalize(input),
+      status: input.status || 'planning',
+      priority: input.priority || 'medium',
+      tags: JSON.stringify(input.tags || []),
     };
     await db('projects').insert(project);
     return serializeProject(project);
@@ -49,10 +66,7 @@ export function projectService(db) {
     };
   };
   const update = async (id, input) => {
-    const values = { ...input, updated_at: now() };
-    if (values.tags) values.tags = JSON.stringify(values.tags);
-    delete values.id;
-    delete values.created_at;
+    const values = { ...normalize(input), updated_at: now() };
     const changed = await db('projects').where({ id }).update(values);
     return changed ? get(id) : null;
   };
