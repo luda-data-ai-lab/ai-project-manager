@@ -293,6 +293,124 @@ describe('DevTracker API', () => {
     response = await request(app).get('/api/projects/missing');
     assert.equal(response.status, 404);
   });
+  it('exports and imports JSON and Markdown backups', async () => {
+    const exportResponse = await request(app).get('/api/export');
+    assert.equal(exportResponse.status, 200);
+    assert.match(exportResponse.headers['content-disposition'], /attachment/);
+    for (const table of [
+      'projects',
+      'tasks',
+      'prompt_logs',
+      'issues',
+      'documents',
+      'pause_resume_memos',
+      'environment_configs',
+      'git_infos',
+      'deploy_infos',
+      'test_records',
+    ])
+      assert.ok(Array.isArray(exportResponse.body[table]));
+    assert.ok(exportResponse.body.projects.some((project) => project.id === projectId));
+    const [{ count: projectCount }] = await db('projects').count('* as count');
+    assert.equal(exportResponse.body.projects.length, Number(projectCount));
+
+    const projectExport = await request(app).get(`/api/export/projects/${projectId}`);
+    assert.equal(projectExport.status, 200);
+    for (const table of [
+      'tasks',
+      'prompt_logs',
+      'issues',
+      'documents',
+      'pause_resume_memos',
+      'environment_configs',
+      'git_infos',
+      'deploy_infos',
+      'test_records',
+    ])
+      assert.ok(projectExport.body[table].every((row) => row.project_id === projectId));
+
+    const markdown = await request(app).get(`/api/export/projects/${projectId}/markdown`);
+    assert.equal(markdown.status, 200);
+    assert.match(markdown.text, /테스트/);
+    assert.match(markdown.text, /첫 작업|마감 작업/);
+
+    const importedProjectName = '가져온 프로젝트';
+    const importedTaskId = 'imported-task-id';
+    const mergePayload = {
+      ...projectExport.body,
+      projects: [{ ...projectExport.body.projects[0], name: importedProjectName }],
+      tasks: [
+        ...projectExport.body.tasks,
+        {
+          id: importedTaskId,
+          project_id: projectId,
+          title: '가져온 고유 작업',
+          description: null,
+          status: 'todo',
+          assignee: 'self',
+          sort_order: 99,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          due_date: null,
+        },
+      ],
+    };
+    let response = await request(app).post('/api/import?mode=merge').send(mergePayload);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.counts.tasks, mergePayload.tasks.length);
+    response = await request(app).get(`/api/projects/${projectId}`);
+    assert.equal(response.body.data.name, importedProjectName);
+    assert.ok(response.body.data.tasks.some((task) => task.id === importedTaskId));
+    response = await request(app).get('/api/search?q=가져온');
+    assert.ok(response.body.data.some((result) => result.entity_id === importedTaskId));
+
+    const replaceProjectId = 'replace-project-id';
+    const replacePayload = {
+      format: 'devtracker-export',
+      version: 1,
+      exported_at: new Date().toISOString(),
+      projects: [
+        {
+          id: replaceProjectId,
+          name: '교체 프로젝트',
+          purpose: null,
+          status: 'planning',
+          priority: 'medium',
+          start_date: null,
+          target_date: null,
+          tags: '[]',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
+      tasks: [
+        {
+          id: 'replace-task-id',
+          project_id: replaceProjectId,
+          title: '교체 작업',
+          description: null,
+          status: 'todo',
+          assignee: 'self',
+          sort_order: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          due_date: null,
+        },
+      ],
+    };
+    response = await request(app).post('/api/import?mode=replace').send(replacePayload);
+    assert.equal(response.status, 200);
+    response = await request(app).get('/api/projects');
+    assert.deepEqual(
+      response.body.data.map((project) => project.id),
+      [replaceProjectId],
+    );
+    response = await request(app).post('/api/import?mode=invalid').send(replacePayload);
+    assert.equal(response.status, 400);
+    response = await request(app).post('/api/import').send({ format: 'invalid' });
+    assert.equal(response.status, 400);
+    projectId = replaceProjectId;
+  });
   it('cascades project deletion', async () => {
     const response = await request(app).delete(`/api/projects/${projectId}`);
     assert.equal(response.status, 200);
