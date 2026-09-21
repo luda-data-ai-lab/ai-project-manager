@@ -66,6 +66,42 @@ describe('DevTracker API', () => {
     assert.equal(response.body.data.runtime, 'Node 20');
     response = await request(app).put(`/api/projects/${projectId}/git`).send({ branch: 'main' });
     assert.equal(response.body.data.branch, 'main');
+    response = await request(app).get(`/api/projects/${projectId}/deploy`);
+    assert.equal(response.body.data, null);
+    response = await request(app).put(`/api/projects/${projectId}/deploy`).send({
+      service_url: 'https://example.test',
+      infra: 'local',
+      deploy_method: 'manual',
+    });
+    assert.equal(response.body.data.infra, 'local');
+    response = await request(app).get(`/api/projects/${projectId}`);
+    assert.equal(response.body.data.deploy.service_url, 'https://example.test');
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tests`)
+      .send({ target: 'npm test', method: 'auto', result: 'pass' });
+    assert.equal(response.status, 201);
+    const testId = response.body.data.id;
+    response = await request(app).post(`/api/projects/${projectId}/tests`).send({
+      target: '브라우저 확인',
+      method: 'manual',
+      result: 'fail',
+      unresolved_issues: '모바일 확인 필요',
+    });
+    assert.equal(response.status, 201);
+    response = await request(app).get(`/api/projects/${projectId}/tests`);
+    assert.equal(response.body.data.length, 2);
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tests`)
+      .send({ target: '   ', result: 'pass' });
+    assert.equal(response.status, 400);
+    response = await request(app)
+      .post(`/api/projects/${projectId}/tests`)
+      .send({ target: '잘못된 결과', result: 'broken' });
+    assert.equal(response.status, 400);
+    response = await request(app).delete(`/api/tests/${testId}`);
+    assert.equal(response.status, 200);
+    response = await request(app).get(`/api/projects/${projectId}/tests`);
+    assert.equal(response.body.data.length, 1);
     response = await request(app).get('/api/dashboard');
     assert.ok(response.body.data.next_tasks);
   });
@@ -169,6 +205,53 @@ describe('DevTracker API', () => {
     assert.equal(response.status, 404);
     response = await request(app).delete(`/api/documents/${documentId}`);
     assert.equal(response.status, 404);
+  });
+  it('searches indexed entities and updates the index', async () => {
+    const searchProject = await request(app).post('/api/projects').send({
+      name: '통합검색 프로젝트',
+      purpose: '검색 전용 프로젝트',
+    });
+    const searchProjectId = searchProject.body.data.id;
+    const task = await request(app)
+      .post(`/api/projects/${searchProjectId}/tasks`)
+      .send({ title: '고유한작업어 oldsearch' });
+    await request(app)
+      .post(`/api/projects/${searchProjectId}/prompts`)
+      .send({ prompt_text: '고유한프롬프트어', tool: 'devin' });
+    await request(app)
+      .post(`/api/projects/${searchProjectId}/documents`)
+      .send({ title: '고유한문서어', content: '문서 본문 검색어' });
+    await request(app)
+      .post(`/api/projects/${searchProjectId}/issues`)
+      .send({ title: '고유한이슈어', description: '이슈 설명' });
+
+    let response = await request(app).get('/api/search?q=고유한작업어');
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data[0].entity_type, 'task');
+    response = await request(app).get('/api/search?q=고유한프롬프트어');
+    assert.equal(response.body.data[0].entity_type, 'prompt');
+    response = await request(app).get('/api/search?q=고유한문서어');
+    assert.equal(response.body.data[0].entity_type, 'document');
+    response = await request(app).get('/api/search?q=고유한이슈어');
+    assert.equal(response.body.data[0].entity_type, 'issue');
+    response = await request(app).get(`/api/search?q=고유한&project=${searchProjectId}&type=task`);
+    assert.equal(response.body.data.length, 1);
+    assert.equal(response.body.data[0].project_id, searchProjectId);
+    response = await request(app).get('/api/search?q=   ');
+    assert.equal(response.status, 400);
+
+    response = await request(app)
+      .put(`/api/tasks/${task.body.data.id}`)
+      .send({ title: '고유한작업어 newsearch' });
+    assert.equal(response.status, 200);
+    response = await request(app).get('/api/search?q=oldsearch');
+    assert.equal(response.body.data.length, 0);
+    response = await request(app).get('/api/search?q=newsearch');
+    assert.equal(response.body.data[0].entity_type, 'task');
+    response = await request(app).delete(`/api/tasks/${task.body.data.id}`);
+    assert.equal(response.status, 200);
+    response = await request(app).get('/api/search?q=newsearch');
+    assert.equal(response.body.data.length, 0);
   });
   it('validates and returns not found', async () => {
     let response = await request(app).post('/api/projects').send({ name: '' });

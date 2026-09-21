@@ -173,4 +173,34 @@ export async function seed(knex) {
     last_pushed_at: null,
     updated_at: time,
   });
+  await knex('deploy_infos').insert({
+    id: makeId(),
+    project_id: ex.id,
+    service_url: 'http://localhost:3000',
+    infra: 'local',
+    version: '0.1.0',
+    deployed_at: time.slice(0, 10),
+    deploy_method: 'manual',
+    updated_at: time,
+  });
+  await knex('test_records').insert([
+    {
+      id: makeId(),
+      project_id: ex.id,
+      target: 'npm test',
+      method: 'auto',
+      result: 'pass',
+      unresolved_issues: null,
+      tested_at: time,
+    },
+    {
+      id: makeId(),
+      project_id: ex.id,
+      target: '브라우저 프로젝트 상세',
+      method: 'manual',
+      result: 'fail',
+      unresolved_issues: '모바일 레이아웃 확인 필요',
+      tested_at: time,
+    },
+  ]);
 }
