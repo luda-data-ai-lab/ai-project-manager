@@ -15,6 +15,7 @@ import DocumentsTab from '../components/Project/DocumentsTab';
 import IssuesTab from '../components/Project/IssuesTab';
 import PromptsTab from '../components/Project/PromptsTab';
 import TestsTab from '../components/Project/TestsTab';
+import TerminalTab from '../components/Project/TerminalTab';
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -76,6 +77,7 @@ export default function ProjectDetailPage() {
     ['overview', '개요'],
     ['tasks', '작업'],
     ['preview', '실행 화면'],
+    ['terminal', '터미널'],
     ['prompts', '프롬프트'],
     ['documents', '문서'],
     ['issues', '이슈'],
@@ -124,6 +126,7 @@ export default function ProjectDetailPage() {
         </>
       )}
       {tab === 'preview' && <PreviewTab env={data.env} onGoSettings={() => setTab('settings')} />}
+      {tab === 'terminal' && <TerminalTab projectId={id} env={data.env} />}
       {tab === 'settings' && <SettingsTab id={id} data={data} onSaved={load} />}
       {tab === 'prompts' && <PromptsTab id={id} tasks={data.tasks} />}
       {tab === 'issues' && <IssuesTab id={id} tasks={data.tasks} />}

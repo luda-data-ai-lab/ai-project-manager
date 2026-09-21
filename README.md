@@ -40,9 +40,12 @@ docs/             기획 및 개발 명세
 - `GET/POST /api/projects/:id/tests`, `DELETE /api/tests/:id` 테스트 기록
 - `GET /api/search?q=&type=&project=` 프로젝트·작업·프롬프트·문서·이슈 통합 검색
 - `GET /api/dashboard` 진행 중 프로젝트, 다음 할 일, 막힌 작업, 최근 변경, 마감 임박 집계
+- `GET /api/terminal/status` 터미널 기능 활성화 상태
 - `GET /api/health` 서버 상태 확인
 
 모든 응답은 `{ success: true, data }` 또는 `{ success: false, error }` 형식입니다.
+
+프로젝트 상세의 **터미널 탭**은 localhost에서만 사용할 수 있으며, `TERMINAL_ENABLED=false`로 비활성화할 수 있습니다.
 
 ## 로컬 설정
 
