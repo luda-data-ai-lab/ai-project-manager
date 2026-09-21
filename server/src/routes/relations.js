@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { validateRelation } from '../middleware/validate.js';
 
-const notFound = (res) =>
-  res.status(400).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
+const notFound = (res, status = 400) =>
+  res.status(status).json({ success: false, error: '프로젝트를 찾을 수 없습니다.' });
 const isDuplicate = (error) =>
   error?.code === 'SQLITE_CONSTRAINT_UNIQUE' ||
   /UNIQUE constraint failed/i.test(error?.message || '');
@@ -13,7 +13,7 @@ export function projectRelationRoutes({ relations, db }) {
   router.get(
     '/:pid/relations',
     asyncHandler(async (req, res) => {
-      if (!(await db('projects').where({ id: req.params.pid }).first())) return notFound(res);
+      if (!(await db('projects').where({ id: req.params.pid }).first())) return notFound(res, 404);
       res.json({ success: true, data: await relations.listForProject(req.params.pid) });
     }),
   );
