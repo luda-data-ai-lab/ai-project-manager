@@ -1,6 +1,54 @@
-# DevTracker (ai-project-manager)
+# DevTracker
 
-AI 도구(Devin·Claude·Cursor)로 개발하는 자체 프로젝트를 한 곳에서 관리하는 웹 애플리케이션.
+AI 도구로 개발하는 프로젝트의 진행 상황, 다음 작업, 중단 메모를 한 곳에서 관리하는 개인용 프로젝트 관리 시스템입니다.
 
-- 기획·설계: [docs/Spec.md](docs/Spec.md)
-- 개발 지시서: [docs/Devin.md](docs/Devin.md)
+## 시작하기
+
+Node.js 20과 npm 10이 필요합니다.
+
+```bash
+npm install
+npm run migrate
+npm run seed
+npm run dev
+```
+
+브라우저에서 http://localhost:5173 을 열고, API는 http://localhost:3001 에서 확인할 수 있습니다.
+
+## 기술 스택
+
+- Client: React 18, Vite 5, Tailwind CSS 3, React Router, lucide-react
+- Server: Node.js ESM, Express 4, Knex, better-sqlite3
+- Database: SQLite
+
+## 구조
+
+```text
+client/src/       React 페이지, 컴포넌트, hooks, API 유틸리티
+server/src/       Express 라우트, 서비스, 미들웨어
+server/db/        Knex 마이그레이션과 시드
+docs/             기획 및 개발 명세
+```
+
+## API 요약
+
+- `GET/POST/PUT/DELETE /api/projects` 프로젝트 CRUD 및 상태·우선순위·검색 필터
+- `GET/POST /api/projects/:id/tasks`, `PUT/DELETE /api/tasks/:id` 작업 관리
+- `GET/POST /api/projects/:id/memos`, `GET /latest` 중단·재개 메모
+- `GET/PUT /api/projects/:id/env`, `GET/PUT /api/projects/:id/git` 실행 환경과 Git 정보
+- `GET /api/dashboard` 진행 중 프로젝트, 다음 할 일, 막힌 작업, 최근 변경, 마감 임박 집계
+- `GET /api/health` 서버 상태 확인
+
+모든 응답은 `{ success: true, data }` 또는 `{ success: false, error }` 형식입니다.
+
+## 로컬 설정
+
+`server/.env.example`과 `client/.env.example`을 참고해 환경변수를 설정할 수 있습니다. SQLite 파일은 기본적으로 `server/data/devtracker.db`에 생성됩니다.
+
+## 로드맵
+
+- **Phase 1 (완료):** 프로젝트·작업·중단 메모·실행 환경·Git 정보·대시보드 MVP
+- **Phase 2:** 프롬프트 로그, 이슈, Markdown 문서, FTS5 통합 검색, 태그 고도화
+- **Phase 3:** 배포·테스트 기록, 백업/내보내기, 비용 관리, 프로젝트 관계
+
+상세 요구사항은 [docs/Devin.md](docs/Devin.md)와 [docs/Spec.md](docs/Spec.md)를 참고하세요.
