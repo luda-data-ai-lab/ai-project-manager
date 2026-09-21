@@ -10,6 +10,9 @@ import OverviewTab from '../components/Project/OverviewTab';
 import SettingsTab from '../components/Project/SettingsTab';
 import TaskBoard from '../components/Task/TaskBoard';
 import TaskForm from '../components/Task/TaskForm';
+import DocumentsTab from '../components/Project/DocumentsTab';
+import IssuesTab from '../components/Project/IssuesTab';
+import PromptsTab from '../components/Project/PromptsTab';
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -116,9 +119,9 @@ export default function ProjectDetailPage() {
         </>
       )}
       {tab === 'settings' && <SettingsTab id={id} data={data} onSaved={load} />}
-      {['prompts', 'documents', 'issues'].includes(tab) && (
-        <EmptyState>Phase 2에서 제공됩니다.</EmptyState>
-      )}
+      {tab === 'prompts' && <PromptsTab id={id} tasks={data.tasks} />}
+      {tab === 'issues' && <IssuesTab id={id} tasks={data.tasks} />}
+      {tab === 'documents' && <DocumentsTab id={id} />}
       {edit && <ProjectForm initial={data} onClose={() => setEdit(false)} onSaved={load} />}
     </>
   );
