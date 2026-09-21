@@ -3,6 +3,7 @@ import { makeId, now } from '../../src/services/helpers.js';
 export async function seed(knex) {
   await knex.raw('PRAGMA foreign_keys = OFF');
   for (const table of [
+    'project_relations',
     'costs',
     'test_records',
     'deploy_infos',
@@ -284,6 +285,32 @@ export async function seed(knex) {
       memo: '프리뷰 배포',
       created_at: time,
       updated_at: time,
+    },
+  ]);
+  await knex('project_relations').insert([
+    {
+      id: makeId(),
+      source_id: projects[0].id,
+      target_id: projects[2].id,
+      relation_type: 'precedes',
+      label: null,
+      created_at: time,
+    },
+    {
+      id: makeId(),
+      source_id: projects[1].id,
+      target_id: projects[0].id,
+      relation_type: 'shares_module',
+      label: '공통 인증 모듈',
+      created_at: time,
+    },
+    {
+      id: makeId(),
+      source_id: projects[2].id,
+      target_id: projects[0].id,
+      relation_type: 'uses_api',
+      label: 'ERD export API',
+      created_at: time,
     },
   ]);
 }

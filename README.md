@@ -38,6 +38,8 @@ docs/             기획 및 개발 명세
 - `GET/PUT /api/projects/:id/env`, `GET/PUT /api/projects/:id/git` 실행 환경과 Git 정보
 - `GET/PUT /api/projects/:id/deploy` 배포 정보
 - `GET/POST /api/projects/:id/tests`, `DELETE /api/tests/:id` 테스트 기록
+- `GET/POST /api/projects/:id/relations`, `DELETE /api/relations/:id` 프로젝트 관계 관리
+- `GET /api/relations/graph` 프로젝트 관계도 데이터
 - `GET/POST /api/costs`, `PUT/DELETE /api/costs/:id` 비용 기록 관리
 - `GET /api/costs/summary?from=&to=` 기간별 비용 요약
 - `GET /api/search?q=&type=&project=` 프로젝트·작업·프롬프트·문서·이슈 통합 검색

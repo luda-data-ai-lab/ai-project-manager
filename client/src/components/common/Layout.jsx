@@ -6,6 +6,7 @@ import {
   Search,
   Settings,
   Wallet,
+  Waypoints,
   X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -17,6 +18,7 @@ export default function Layout({ children }) {
     ['/', '대시보드', BarChart3],
     ['/projects', '프로젝트', FolderKanban],
     ['/costs', '비용', Wallet],
+    ['/relations', '관계도', Waypoints],
   ];
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
