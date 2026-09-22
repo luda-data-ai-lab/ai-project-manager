@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Mail,
   DatabaseBackup,
   FolderKanban,
   Menu,
@@ -23,7 +24,7 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <aside
-        className={`fixed inset-y-0 left-0 z-30 w-64 border-r border-slate-200 bg-white p-5 transition md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col overflow-y-auto border-r border-slate-200 bg-white p-5 transition md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="mb-10 flex items-center justify-between">
           <Link to="/" className="text-xl font-bold text-slate-900">
@@ -68,6 +69,25 @@ export default function Layout({ children }) {
             백업
           </NavLink>
         </nav>
+        <div className="mt-auto border-t border-slate-200 pt-4 text-center text-xs text-slate-500">
+          <img
+            src="/luda-logo.jpg"
+            alt="LUDA Research Group"
+            className="mx-auto mb-3 w-28 rounded-xl"
+          />
+          <p className="font-medium text-slate-700">
+            Lighting the Universe through
+            <br />
+            Data and AI
+          </p>
+          <a
+            href="mailto:contact@ludaresearch.org"
+            className="mt-2 flex items-center justify-center gap-1.5 hover:text-slate-800"
+          >
+            <Mail size={13} /> contact@ludaresearch.org
+          </a>
+          <p className="mt-2">© 2026 LUDA. All rights reserved.</p>
+        </div>
       </aside>
       <div className="md:pl-64">
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur md:px-8">
