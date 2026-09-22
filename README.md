@@ -4,7 +4,7 @@ AI 도구로 개발하는 프로젝트의 진행 상황, 다음 작업, 중단 �
 
 ## 시작하기
 
-Node.js 20 또는 22 LTS와 npm 10이 필요합니다. (Node 24는 better-sqlite3 프리빌드가 없어 Windows에서 Visual Studio C++ 빌드 도구가 필요합니다.)
+Node.js 20 이상(22 LTS 또는 24 권장)과 npm 10이 필요합니다.
 
 ```bash
 npm install

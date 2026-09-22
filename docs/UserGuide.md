@@ -20,7 +20,7 @@ DevTracker의 핵심 질문은 **“어디까지 했고, 다음에 무엇을 하
 
 ### 요구 사항
 
-- Node.js 20 또는 22 LTS (Node 24는 better-sqlite3 프리빌드가 없어 Windows에서 Visual Studio C++ 빌드 도구가 필요합니다)
+- Node.js 20 이상 (22 LTS 또는 24)
 - npm 10
 - 터미널을 사용할 경우 `node-pty`가 동작하는 로컬 셸 환경
 
