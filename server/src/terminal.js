@@ -5,6 +5,12 @@ import { WebSocketServer } from 'ws';
 
 const LOOPBACK_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
+export function defaultShell(env = process.env, platform = process.platform) {
+  if (env.SHELL) return env.SHELL;
+  if (platform === 'win32') return env.COMSPEC || 'powershell.exe';
+  return 'bash';
+}
+
 export function attachTerminal(httpServer, db) {
   if (process.env.TERMINAL_ENABLED === 'false') return null;
 
@@ -22,13 +28,23 @@ export function attachTerminal(httpServer, db) {
       : null;
     const sourceFolder = environment?.source_folder;
     const cwd = sourceFolder && fs.existsSync(sourceFolder) ? sourceFolder : os.homedir();
-    const terminal = pty.spawn(process.env.SHELL || 'bash', [], {
-      name: 'xterm-color',
-      cols: 80,
-      rows: 24,
-      cwd,
-      env: process.env,
-    });
+    const shell = defaultShell();
+    let terminal;
+    try {
+      terminal = pty.spawn(shell, [], {
+        name: 'xterm-color',
+        cols: 80,
+        rows: 24,
+        cwd,
+        env: process.env,
+      });
+    } catch (error) {
+      console.error('Failed to spawn terminal', error);
+      if (ws.readyState === 1)
+        ws.send(`\r\n셸을 실행할 수 없습니다 (${shell}): ${error.message}\r\n`);
+      ws.close(1011, 'Failed to spawn shell');
+      return;
+    }
 
     const send = (data) => {
       if (ws.readyState === 1) ws.send(data);
