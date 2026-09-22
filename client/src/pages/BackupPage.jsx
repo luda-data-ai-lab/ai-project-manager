@@ -162,8 +162,8 @@ export default function BackupPage() {
             <h2 className="font-semibold">정기 백업</h2>
           </div>
           <p className="mt-3 text-sm text-slate-600">
-            AI DevTracker는 로컬 앱이므로 서버가 실행 중일 때 curl 또는 cron으로 정기 백업을 설정할 수
-            있습니다.
+            AI DevTracker는 로컬 앱이므로 서버가 실행 중일 때 curl 또는 cron으로 정기 백업을 설정할
+            수 있습니다.
           </p>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-slate-950 p-4 text-xs text-slate-100">
             {`curl -o backup.json http://localhost:${__API_PORT__}/api/export\n0 3 * * * curl -fsS -o "$HOME/devtracker-backup-$(date +%Y%m%d).json" http://localhost:${__API_PORT__}/api/export`}
