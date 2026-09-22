@@ -1,5 +1,4 @@
 import cors from 'cors';
-import dotenv from 'dotenv';
 import express from 'express';
 import http from 'node:http';
 import knex from 'knex';
@@ -31,7 +30,6 @@ import { projectRelationRoutes, relationRoutes } from './routes/relations.js';
 import { costRoutes } from './routes/costs.js';
 import { exportRoutes, importRoutes } from './routes/export.js';
 
-dotenv.config();
 export function createApp(db, search = searchService(db)) {
   const services = {
     projects: projectService(db, search),

@@ -13,7 +13,7 @@ npm run seed
 npm run dev
 ```
 
-브라우저에서 http://localhost:5173 을 열고, API는 http://localhost:3001 에서 확인할 수 있습니다.
+브라우저에서 http://localhost:5173 을 열고, API는 http://localhost:3001 에서 확인할 수 있습니다. 3001 포트가 사용 중이면 루트에 `.env`를 만들어 `PORT=3101`처럼 지정하세요(`.env.example` 참고) — 서버와 Vite 프록시가 함께 바뀝니다.
 
 ## 기술 스택
 
