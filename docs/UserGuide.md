@@ -39,12 +39,15 @@ npm run dev
 <http://localhost:3001/api/health>에서 확인합니다.
 
 `npm run dev`는 서버와 Vite 클라이언트를 함께 실행합니다.
-Vite 개발 서버는 5173 포트에서 실행되며 `/api` 요청을 API 서버 3001 포트로 프록시합니다.
+Vite 개발 서버는 5173 포트에서 실행되며 `/api` 요청을 API 서버 포트(기본 3001)로 프록시합니다.
+3001 포트를 다른 서비스가 사용 중이면 저장소 루트에 `.env` 파일을 만들고 `PORT=3101`처럼
+지정하세요. 서버와 Vite 프록시가 같은 `.env`를 읽으므로 한 곳만 바꾸면 됩니다
+(`.env.example` 참고). 값을 바꾼 뒤에는 `npm run dev`를 다시 시작합니다.
 서버가 시작될 때 최신 마이그레이션과 검색 인덱스 재생성이 자동으로 수행됩니다.
 
 ### 환경 변수
 
-기본값은 `server/.env.example`을 참고할 수 있습니다.
+저장소 루트의 `.env`(또는 `server/.env`)에 설정합니다. 기본값은 `.env.example`을 참고하세요.
 
 | 변수 | 기본값/예시 | 설명 |
 | --- | --- | --- |
@@ -61,8 +64,8 @@ Vite 개발 서버는 5173 포트에서 실행되며 `/api` 요청을 API 서버
 DB_PATH=/tmp/devtracker-guide.db PORT=3101 npm run start -w server
 ```
 
-클라이언트 프록시 대상은 `client/vite.config.js`의 `/api` 설정을 확인하세요. 포트를 변경하면
-개발 클라이언트의 프록시 대상도 함께 변경해야 합니다.
+이렇게 명령줄에서 `PORT`를 지정하면 서버만 바뀌므로, 개발 클라이언트와 함께 쓸 때는
+루트 `.env`의 `PORT`를 사용하세요. Vite 프록시가 같은 값을 읽습니다.
 
 ### 시드 데이터 초기화
 
@@ -420,9 +423,9 @@ API 응답은 일반적으로 `{ success: true, data }` 또는 `{ success: false
 
 ### 포트 충돌
 
-3001 또는 5173 포트를 다른 프로세스가 사용하면 해당 프로세스를 종료하거나 개발 설정을
-변경합니다. 서버 `PORT`를 바꿀 때는 `client/vite.config.js`의 API 및 WebSocket proxy
-대상도 같은 포트로 맞춰야 합니다.
+API 포트(기본 3001)를 다른 프로세스가 사용하면 루트 `.env`에 `PORT=3101`처럼 다른 포트를
+지정하고 `npm run dev`를 다시 시작합니다. 서버와 Vite의 API/WebSocket 프록시가 모두 이 값을
+따릅니다. 5173 포트 충돌은 `client/vite.config.js`의 `server.port`를 변경합니다.
 
 ### 데이터베이스 초기화
 

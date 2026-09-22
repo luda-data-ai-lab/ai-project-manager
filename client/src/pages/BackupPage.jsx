@@ -166,7 +166,7 @@ export default function BackupPage() {
             있습니다.
           </p>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-slate-950 p-4 text-xs text-slate-100">
-            {`curl -o backup.json http://localhost:3001/api/export\n0 3 * * * curl -fsS -o "$HOME/devtracker-backup-$(date +%Y%m%d).json" http://localhost:3001/api/export`}
+            {`curl -o backup.json http://localhost:${__API_PORT__}/api/export\n0 3 * * * curl -fsS -o "$HOME/devtracker-backup-$(date +%Y%m%d).json" http://localhost:${__API_PORT__}/api/export`}
           </pre>
         </Card>
       </div>

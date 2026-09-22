@@ -19,7 +19,7 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       parserOptions: { ecmaFeatures: { jsx: true } },
-      globals: globals.browser,
+      globals: { ...globals.browser, __API_PORT__: 'readonly' },
     },
     plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
     rules: {
