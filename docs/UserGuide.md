@@ -55,7 +55,7 @@ Vite 개발 서버는 5173 포트에서 실행되며 `/api` 요청을 API 서버
 | `DB_PATH` | `./data/devtracker.db` | SQLite 파일 경로. `:memory:`도 테스트에 사용할 수 있습니다. |
 | `CLIENT_ORIGIN` | `http://localhost:5173` | CORS에서 허용할 클라이언트 Origin |
 | `TERMINAL_ENABLED` | 미설정(활성) | `false`로 설정하면 터미널 WebSocket을 비활성화 |
-| `SHELL` | 운영체제 기본 셸 | 터미널 탭에서 실행할 셸 |
+| `SHELL` | 운영체제 기본 셸 | 터미널 탭에서 실행할 셸. 미설정 시 Windows는 `COMSPEC`(cmd.exe), 그 외는 `bash` |
 | `NODE_ENV` | 미설정 | `test`이면 서버를 직접 listen하지 않음 |
 
 예를 들어 별도 데이터베이스와 포트로 서버를 실행할 수 있습니다.
@@ -247,7 +247,7 @@ README(`readme`), 노트(`note`)입니다. 본문은 Markdown과 GFM 문법으�
 
 터미널 탭은 브라우저와 서버 사이에 WebSocket 터미널을 연결합니다. 프로젝트의 실행 환경에
 소스 폴더가 있고 해당 경로가 실제로 존재하면 그 경로를 현재 작업 디렉터리(cwd)로 사용하며,
-그렇지 않으면 서버 프로세스의 홈 디렉터리를 사용합니다. 셸은 `SHELL` 환경 변수로 선택합니다.
+그렇지 않으면 서버 프로세스의 홈 디렉터리를 사용합니다. 셸은 `SHELL` 환경 변수로 선택하며, 미설정 시 Windows는 `COMSPEC`(cmd.exe), 그 외는 `bash`를 사용합니다. 루트 `.env`에 `SHELL=powershell.exe`처럼 지정할 수도 있습니다.
 
 `run_command`가 설정되어 있으면 `실행 명령어 실행` 버튼이 나타나며, 설정된 명령을 터미널에
 입력합니다. `재연결`로 연결을 다시 만들 수 있습니다. 터미널은 localhost 연결만 허용하고,
