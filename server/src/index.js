@@ -80,7 +80,7 @@ if (process.env.NODE_ENV !== 'test') {
   db.migrate
     .latest()
     .then(() => search.reindex())
-    .then(() => server.listen(port, () => console.log(`DevTracker server listening on ${port}`)))
+    .then(() => server.listen(port, () => console.log(`AI DevTracker server listening on ${port}`)))
     .catch((error) => {
       console.error('Failed to start server', error);
       process.exitCode = 1;
