@@ -27,7 +27,7 @@ export default function Layout({ children }) {
       >
         <div className="mb-10 flex items-center justify-between">
           <Link to="/" className="text-xl font-bold text-slate-900">
-            DevTracker
+            AI DevTracker
           </Link>
           <button className="md:hidden" onClick={() => setOpen(false)}>
             <X />
