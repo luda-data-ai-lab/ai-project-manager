@@ -7,7 +7,7 @@ export default function ProjectTable({ projects }) {
       <table className="w-full text-left text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
           <tr>
-            {['이름', '상태', '우선순위', '목표일', 'D-day', '태그'].map((title) => (
+            {['이름', '그룹', '상태', '우선순위', '목표일', 'D-day', '태그'].map((title) => (
               <th className="px-4 py-3 font-medium" key={title}>
                 {title}
               </th>
@@ -24,6 +24,7 @@ export default function ProjectTable({ projects }) {
                     {project.name}
                   </Link>
                 </td>
+                <td className="px-4 py-4">{project.group_name || '-'}</td>
                 <td className="px-4 py-4">
                   <ProjectBadges status={project.status} priority={project.priority} />
                 </td>

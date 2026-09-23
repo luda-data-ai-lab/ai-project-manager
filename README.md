@@ -38,7 +38,8 @@ docs/             기획 및 개발 명세
 
 ## API 요약
 
-- `GET/POST/PUT/DELETE /api/projects` 프로젝트 CRUD 및 상태·우선순위·검색 필터
+- `GET/POST/PUT/DELETE /api/projects` 프로젝트 CRUD 및 상태·우선순위·그룹·검색 필터
+- `GET /api/projects/groups` 등록된 프로젝트 그룹 목록
 - `GET/POST /api/projects/:id/tasks`, `PUT/DELETE /api/tasks/:id` 작업 관리
 - `GET/POST /api/projects/:id/memos`, `GET /latest` 중단·재개 메모
 - `GET/PUT /api/projects/:id/env`, `GET/PUT /api/projects/:id/git` 실행 환경과 Git 정보

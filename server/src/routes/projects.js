@@ -26,6 +26,10 @@ export function projectRoutes({ projects, tasks, memos, configs, prompts, issues
       res.json({ success: true, data: await projects.list(req.query) }),
     ),
   );
+  router.get(
+    '/groups',
+    asyncHandler(async (_req, res) => res.json({ success: true, data: await projects.groups() })),
+  );
   router.post(
     '/',
     asyncHandler(async (req, res) => {
