@@ -37,6 +37,7 @@ export async function seed(knex) {
       start_date: '2026-09-01',
       target_date: '2026-10-15',
       tags: JSON.stringify(['excel', 'database', 'migration']),
+      group_name: 'LUDA',
     },
     {
       id: makeId(),
@@ -46,6 +47,7 @@ export async function seed(knex) {
       priority: 'medium',
       target_date: soon,
       tags: JSON.stringify(['ai', 'content', 'book']),
+      group_name: '개인',
     },
     {
       id: makeId(),

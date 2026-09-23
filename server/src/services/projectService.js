@@ -8,10 +8,11 @@ const projectColumns = [
   'start_date',
   'target_date',
   'tags',
+  'group_name',
 ];
 const normalize = (input) => {
   const values = pick(input, projectColumns);
-  for (const column of ['purpose', 'start_date', 'target_date']) {
+  for (const column of ['purpose', 'start_date', 'target_date', 'group_name']) {
     if (Object.prototype.hasOwnProperty.call(values, column))
       values[column] = nullable(values[column]);
   }
@@ -40,12 +41,21 @@ export function projectService(db, search) {
     const query = db('projects').select('*').orderBy('updated_at', 'desc');
     if (filters.status) query.where('status', filters.status);
     if (filters.priority) query.where('priority', filters.priority);
+    if (filters.group) query.where('group_name', filters.group);
     if (filters.q)
       query.where((builder) =>
         builder.whereLike('name', `%${filters.q}%`).orWhereLike('purpose', `%${filters.q}%`),
       );
     return (await query).map(serializeProject);
   };
+  const groups = async () =>
+    (
+      await db('projects')
+        .whereNotNull('group_name')
+        .where('group_name', '!=', '')
+        .distinct('group_name')
+        .orderBy('group_name')
+    ).map((project) => project.group_name);
   const get = async (id) => {
     const project = await db('projects').where({ id }).first();
     if (!project) return null;
@@ -80,5 +90,5 @@ export function projectService(db, search) {
     await search?.removeProject(id);
     return db('projects').where({ id }).del();
   };
-  return { create, list, get, update, remove };
+  return { create, list, groups, get, update, remove };
 }
