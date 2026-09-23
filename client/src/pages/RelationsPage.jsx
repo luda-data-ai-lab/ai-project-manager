@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../utils/api';
+import { inputClass } from '../utils/styles';
 import { Card, EmptyState, PageHeader, Spinner } from '../components/common';
 
 const relationLabels = {
@@ -228,14 +229,9 @@ function Legend({ className = '' }) {
   );
 }
 
-const modes = [
-  ['all', '전체'],
-  ['group', '그룹별'],
-];
-
 export default function RelationsPage() {
   const [graph, setGraph] = useState(null);
-  const [mode, setMode] = useState('all');
+  const [selected, setSelected] = useState('');
   useEffect(() => {
     api('/relations/graph')
       .then(setGraph)
@@ -244,56 +240,43 @@ export default function RelationsPage() {
 
   const groups = useMemo(() => {
     if (!graph) return [];
-    const names = [...new Set(graph.nodes.map((node) => node.group_name || '미분류'))].sort(
-      (a, b) => (a === '미분류' ? 1 : b === '미분류' ? -1 : a.localeCompare(b)),
+    return [...new Set(graph.nodes.map((node) => node.group_name || '미분류'))].sort((a, b) =>
+      a === '미분류' ? 1 : b === '미분류' ? -1 : a.localeCompare(b),
     );
-    return names.map((name) => {
-      const nodes = graph.nodes.filter((node) => (node.group_name || '미분류') === name);
-      const ids = new Set(nodes.map((node) => node.id));
-      const edges = graph.edges.filter(
-        (edge) => ids.has(edge.source_id) && ids.has(edge.target_id),
-      );
-      return { name, nodes, edges };
-    });
   }, [graph]);
+
+  const { nodes, edges } = useMemo(() => {
+    if (!graph) return { nodes: [], edges: [] };
+    if (!selected) return graph;
+    const nodes = graph.nodes.filter((node) => (node.group_name || '미분류') === selected);
+    const ids = new Set(nodes.map((node) => node.id));
+    const edges = graph.edges.filter((edge) => ids.has(edge.source_id) && ids.has(edge.target_id));
+    return { nodes, edges };
+  }, [graph, selected]);
 
   if (!graph) return <Spinner />;
   return (
     <>
       <div className="flex items-start justify-between gap-4">
         <PageHeader title="관계도" description="프로젝트 간 의존성과 연결 관계를 확인하세요." />
-        <div className="flex shrink-0 rounded-lg border border-slate-200 bg-white p-1 text-sm">
-          {modes.map(([value, label]) => (
-            <button
-              key={value}
-              className={`rounded px-3 py-1 ${mode === value ? 'bg-slate-900 text-white' : 'text-slate-500'}`}
-              onClick={() => setMode(value)}
-            >
-              {label}
-            </button>
+        <select
+          aria-label="그룹 선택"
+          className={`${inputClass} w-auto shrink-0`}
+          value={selected}
+          onChange={(event) => setSelected(event.target.value)}
+        >
+          <option value="">전체</option>
+          {groups.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
           ))}
-        </div>
+        </select>
       </div>
-      {mode === 'all' ? (
-        <Card>
-          <RelationGraph nodes={graph.nodes} edges={graph.edges} />
-          <Legend className="mt-4 border-t border-slate-100 pt-4" />
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {groups.map((group) => (
-            <Card key={group.name}>
-              <h2 className="mb-4 text-sm font-semibold text-slate-500">
-                {group.name} <span className="font-normal">({group.nodes.length})</span>
-              </h2>
-              <RelationGraph nodes={group.nodes} edges={group.edges} />
-            </Card>
-          ))}
-          <Card>
-            <Legend />
-          </Card>
-        </div>
-      )}
+      <Card>
+        <RelationGraph nodes={nodes} edges={edges} />
+        <Legend className="mt-4 border-t border-slate-100 pt-4" />
+      </Card>
     </>
   );
 }
