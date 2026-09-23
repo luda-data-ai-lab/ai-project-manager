@@ -24,6 +24,75 @@ const statusColors = {
   paused: '#f59e0b',
 };
 
+const NODE_W = 150;
+const NODE_H = 52;
+const GAP = 70;
+const CANVAS_W = 900;
+
+function connectedComponents(nodes, edges) {
+  const adjacency = new Map(nodes.map((node) => [node.id, new Set()]));
+  for (const edge of edges) {
+    adjacency.get(edge.source_id)?.add(edge.target_id);
+    adjacency.get(edge.target_id)?.add(edge.source_id);
+  }
+  const seen = new Set();
+  const components = [];
+  for (const node of nodes) {
+    if (seen.has(node.id)) continue;
+    const component = [];
+    const stack = [node.id];
+    while (stack.length) {
+      const id = stack.pop();
+      if (seen.has(id)) continue;
+      seen.add(id);
+      component.push(id);
+      for (const next of adjacency.get(id) || []) if (!seen.has(next)) stack.push(next);
+    }
+    components.push(component);
+  }
+  return components.sort((a, b) => b.length - a.length);
+}
+
+function layout(nodes, edges) {
+  const positions = new Map();
+  let cursorX = 0;
+  let cursorY = 0;
+  let rowHeight = 0;
+  for (const component of connectedComponents(nodes, edges)) {
+    const count = component.length;
+    const radius =
+      count === 1 ? 0 : count === 2 ? NODE_W / 2 + GAP : ((NODE_W + GAP) * count) / (2 * Math.PI);
+    const boxW = 2 * radius + NODE_W + GAP;
+    const boxH = 2 * radius + NODE_H + GAP;
+    if (cursorX + boxW > CANVAS_W && cursorX > 0) {
+      cursorX = 0;
+      cursorY += rowHeight;
+      rowHeight = 0;
+    }
+    const center = { x: cursorX + boxW / 2, y: cursorY + boxH / 2 };
+    component.forEach((id, index) => {
+      const angle = -Math.PI / 2 + (index * 2 * Math.PI) / count;
+      positions.set(id, {
+        x: center.x + radius * Math.cos(angle),
+        y: center.y + radius * Math.sin(angle),
+      });
+    });
+    cursorX += boxW;
+    rowHeight = Math.max(rowHeight, boxH);
+  }
+  return { positions, width: CANVAS_W, height: cursorY + rowHeight };
+}
+
+function clipToRect(from, to) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const scale = Math.min(
+    dx ? Math.abs((NODE_W / 2 + 4) / dx) : Infinity,
+    dy ? Math.abs((NODE_H / 2 + 4) / dy) : Infinity,
+  );
+  return { x: to.x - dx * scale, y: to.y - dy * scale };
+}
+
 export default function RelationsPage() {
   const [graph, setGraph] = useState(null);
   useEffect(() => {
@@ -32,23 +101,12 @@ export default function RelationsPage() {
       .catch(() => setGraph({ nodes: [], edges: [] }));
   }, []);
 
-  const positions = useMemo(() => {
-    if (!graph) return new Map();
-    const center = { x: 400, y: 300 };
-    const radius = Math.min(220, Math.max(130, graph.nodes.length * 32));
-    return new Map(
-      graph.nodes.map((node, index) => {
-        const angle = -Math.PI / 2 + (index * 2 * Math.PI) / Math.max(graph.nodes.length, 1);
-        return [
-          node.id,
-          {
-            ...center,
-            x: center.x + radius * Math.cos(angle),
-            y: center.y + radius * Math.sin(angle),
-          },
-        ];
-      }),
-    );
+  const { linked, unlinked, positions, width, height } = useMemo(() => {
+    if (!graph) return { linked: [], unlinked: [], positions: new Map(), width: 0, height: 0 };
+    const linkedIds = new Set(graph.edges.flatMap((edge) => [edge.source_id, edge.target_id]));
+    const linked = graph.nodes.filter((node) => linkedIds.has(node.id));
+    const unlinked = graph.nodes.filter((node) => !linkedIds.has(node.id));
+    return { linked, unlinked, ...layout(linked, graph.edges) };
   }, [graph]);
 
   if (!graph) return <Spinner />;
@@ -60,8 +118,9 @@ export default function RelationsPage() {
       ) : (
         <Card>
           <svg
-            viewBox="0 0 800 600"
-            className="h-auto w-full"
+            viewBox={`0 0 ${width} ${height}`}
+            className="mx-auto h-auto w-full"
+            style={{ maxWidth: width }}
             role="img"
             aria-label="프로젝트 관계도"
           >
@@ -75,7 +134,7 @@ export default function RelationsPage() {
                 markerHeight="7"
                 orient="auto-start-reverse"
               >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
               </marker>
             </defs>
             {graph.edges.map((edge) => {
@@ -83,31 +142,43 @@ export default function RelationsPage() {
               const target = positions.get(edge.target_id);
               if (!source || !target) return null;
               const color = relationColors[edge.relation_type];
-              const midX = (source.x + target.x) / 2;
-              const midY = (source.y + target.y) / 2;
+              const start = clipToRect(target, source);
+              const end = clipToRect(source, target);
+              const midX = (start.x + end.x) / 2;
+              const midY = (start.y + end.y) / 2;
+              const label = edge.label || relationLabels[edge.relation_type];
               return (
                 <g key={edge.id}>
                   <line
-                    x1={source.x}
-                    y1={source.y}
-                    x2={target.x}
-                    y2={target.y}
+                    x1={start.x}
+                    y1={start.y}
+                    x2={end.x}
+                    y2={end.y}
                     stroke={color}
                     strokeWidth="2"
                     markerEnd="url(#relation-arrow)"
                   />
+                  <rect
+                    x={midX - label.length * 3.5 - 4}
+                    y={midY - 9}
+                    width={label.length * 7 + 8}
+                    height="18"
+                    rx="4"
+                    fill="white"
+                    fillOpacity="0.9"
+                  />
                   <text
                     x={midX}
-                    y={midY - 8}
+                    y={midY + 4}
                     textAnchor="middle"
                     className="fill-slate-500 text-[12px]"
                   >
-                    {edge.label || relationLabels[edge.relation_type]}
+                    {label}
                   </text>
                 </g>
               );
             })}
-            {graph.nodes.map((node) => {
+            {linked.map((node) => {
               const position = positions.get(node.id);
               return (
                 <Link key={node.id} to={`/projects/${node.id}`}>
@@ -144,6 +215,20 @@ export default function RelationsPage() {
               </div>
             ))}
           </div>
+          {unlinked.length > 0 && (
+            <div className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-500">
+              <span className="mr-2 font-medium">관계 없는 프로젝트 ({unlinked.length})</span>
+              {unlinked.map((node) => (
+                <Link
+                  key={node.id}
+                  to={`/projects/${node.id}`}
+                  className="mr-2 inline-block rounded bg-slate-100 px-2 py-0.5 hover:bg-slate-200"
+                >
+                  {node.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </Card>
       )}
     </>
