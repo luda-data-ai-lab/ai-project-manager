@@ -70,14 +70,16 @@ export default function Layout({ children }) {
           </NavLink>
         </nav>
         <div className="mt-auto border-t border-slate-200 pt-4 text-center text-xs text-slate-500">
-          <div className="flex items-center justify-center gap-3 text-left">
+          <div className="flex items-center justify-center gap-3">
             <img
               src="/luda-logo.jpg"
               alt="LUDA Research Group"
               className="w-12 shrink-0 rounded-lg"
             />
-            <p className="whitespace-nowrap text-[11px] font-medium leading-snug text-slate-700">
-              Lighting the Universe through
+            <p className="whitespace-nowrap text-center text-[11px] font-medium leading-snug text-slate-700">
+              Lighting the Universe
+              <br />
+              through
               <br />
               Data and AI
             </p>
