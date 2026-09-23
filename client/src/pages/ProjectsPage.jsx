@@ -10,7 +10,8 @@ import ProjectForm from '../components/Project/ProjectForm';
 import ProjectTable from '../components/Project/ProjectTable';
 export default function ProjectsPage() {
   const [projects, setProjects] = useState(null);
-  const [filters, setFilters] = useState({ status: '', priority: '', q: '' });
+  const [groups, setGroups] = useState([]);
+  const [filters, setFilters] = useState({ status: '', priority: '', group: '', q: '' });
   const [modal, setModal] = useState(false);
   const [view, setView] = useState('card');
   const load = () =>
@@ -19,9 +20,16 @@ export default function ProjectsPage() {
     )
       .then(setProjects)
       .catch((error) => toast.error(error.message));
+  const loadGroups = () =>
+    api('/projects/groups')
+      .then(setGroups)
+      .catch((error) => toast.error(error.message));
   useEffect(() => {
     load();
-  }, [filters.status, filters.priority, filters.q]);
+  }, [filters.status, filters.priority, filters.group, filters.q]);
+  useEffect(() => {
+    loadGroups();
+  }, []);
   return (
     <>
       <PageHeader
@@ -49,6 +57,18 @@ export default function ProjectsPage() {
           {Object.entries(projectStatusLabels).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
+            </option>
+          ))}
+        </select>
+        <select
+          className={`${inputClass} max-w-[150px]`}
+          value={filters.group}
+          onChange={(event) => setFilters({ ...filters, group: event.target.value })}
+        >
+          <option value="">모든 그룹</option>
+          {groups.map((group) => (
+            <option key={group} value={group}>
+              {group}
             </option>
           ))}
         </select>
@@ -85,18 +105,45 @@ export default function ProjectsPage() {
         <Spinner />
       ) : projects.length ? (
         view === 'card' ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map((project) => (
-              <ProjectCard project={project} key={project.id} />
-            ))}
-          </div>
+          !filters.group && projects.some((project) => project.group_name) ? (
+            <>
+              {[...new Set(projects.map((project) => project.group_name || '미분류'))]
+                .sort((a, b) => (a === '미분류' ? 1 : b === '미분류' ? -1 : a.localeCompare(b)))
+                .map((group) => (
+                  <section key={group}>
+                    <h2 className="mb-3 mt-6 text-sm font-semibold text-slate-500">{group}</h2>
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                      {projects
+                        .filter((project) => (project.group_name || '미분류') === group)
+                        .map((project) => (
+                          <ProjectCard project={project} key={project.id} />
+                        ))}
+                    </div>
+                  </section>
+                ))}
+            </>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {projects.map((project) => (
+                <ProjectCard project={project} key={project.id} />
+              ))}
+            </div>
+          )
         ) : (
           <ProjectTable projects={projects} />
         )
       ) : (
         <EmptyState>등록된 프로젝트가 없습니다.</EmptyState>
       )}
-      {modal && <ProjectForm onClose={() => setModal(false)} onSaved={load} />}
+      {modal && (
+        <ProjectForm
+          onClose={() => setModal(false)}
+          onSaved={async () => {
+            await load();
+            await loadGroups();
+          }}
+        />
+      )}
     </>
   );
 }

@@ -40,6 +40,24 @@ describe('DevTracker API', () => {
     response = await request(app).put(`/api/projects/${projectId}`).send({ status: 'paused' });
     assert.equal(response.status, 200);
   });
+  it('filters projects by group and normalizes an empty group', async () => {
+    let response = await request(app).post('/api/projects').send({
+      name: '그룹 프로젝트',
+      group_name: 'LUDA',
+    });
+    assert.equal(response.status, 201);
+    const groupedProjectId = response.body.data.id;
+    response = await request(app).get('/api/projects?group=LUDA');
+    assert.ok(response.body.data.some((project) => project.id === groupedProjectId));
+    response = await request(app).get('/api/projects/groups');
+    assert.deepEqual(response.body.data, ['LUDA']);
+    response = await request(app).put(`/api/projects/${groupedProjectId}`).send({ group_name: '' });
+    assert.equal(response.status, 200);
+    response = await request(app).get(`/api/projects/${groupedProjectId}`);
+    assert.equal(response.body.data.group_name, null);
+    response = await request(app).delete(`/api/projects/${groupedProjectId}`);
+    assert.equal(response.status, 200);
+  });
   it('handles tasks, memos, env and git', async () => {
     let response = await request(app)
       .post(`/api/projects/${projectId}/tasks`)
