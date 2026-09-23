@@ -42,7 +42,7 @@ export function relationService(db) {
 
   const graph = async () => {
     const [nodes, relations] = await Promise.all([
-      db('projects').select('id', 'name', 'status').orderBy('name'),
+      db('projects').select('id', 'name', 'status', 'group_name').orderBy('name'),
       listAll(),
     ]);
     return {
