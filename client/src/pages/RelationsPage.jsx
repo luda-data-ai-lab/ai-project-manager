@@ -257,22 +257,25 @@ export default function RelationsPage() {
   if (!graph) return <Spinner />;
   return (
     <>
-      <div className="flex items-start justify-between gap-4">
-        <PageHeader title="관계도" description="프로젝트 간 의존성과 연결 관계를 확인하세요." />
-        <select
-          aria-label="그룹 선택"
-          className={`${inputClass} w-auto shrink-0`}
-          value={selected}
-          onChange={(event) => setSelected(event.target.value)}
-        >
-          <option value="">전체</option>
-          {groups.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <PageHeader
+        title="관계도"
+        description="프로젝트 간 의존성과 연결 관계를 확인하세요."
+        action={
+          <select
+            aria-label="그룹 선택"
+            className={`${inputClass} !w-44 shrink-0`}
+            value={selected}
+            onChange={(event) => setSelected(event.target.value)}
+          >
+            <option value="">전체</option>
+            {groups.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        }
+      />
       <Card>
         <RelationGraph nodes={nodes} edges={edges} />
         <Legend className="mt-4 border-t border-slate-100 pt-4" />
