@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import ProjectBadges from './ProjectBadges';
-import { formatDday } from '../../utils/date';
+import { formatProjectSchedule } from '../../utils/date';
 export default function ProjectTable({ projects }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="w-full text-left text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500">
           <tr>
-            {['이름', '그룹', '상태', '우선순위', '목표일', 'D-day', '태그'].map((title) => (
+            {['이름', '그룹', '상태', '우선순위', '목표일', '일정', '태그'].map((title) => (
               <th className="px-4 py-3 font-medium" key={title}>
                 {title}
               </th>
@@ -16,7 +16,7 @@ export default function ProjectTable({ projects }) {
         </thead>
         <tbody>
           {projects.map((project) => {
-            const dday = formatDday(project.target_date);
+            const dday = formatProjectSchedule(project);
             return (
               <tr className="border-b border-slate-100 last:border-0" key={project.id}>
                 <td className="px-4 py-4 font-medium">

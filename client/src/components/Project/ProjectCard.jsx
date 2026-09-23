@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Card } from '../common';
 import ProjectBadges from './ProjectBadges';
-import { formatDday } from '../../utils/date';
+import { formatProjectSchedule } from '../../utils/date';
 export default function ProjectCard({ project }) {
-  const dday = formatDday(project.target_date);
+  const dday = formatProjectSchedule(project);
   return (
     <Link to={`/projects/${project.id}`}>
       <Card className="h-full transition hover:-translate-y-0.5 hover:shadow-md">
