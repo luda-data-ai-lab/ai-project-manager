@@ -35,7 +35,7 @@ export async function serviceStatusService(db) {
   return Promise.all(
     services.map(async (service) => ({
       ...service,
-      running: await isPortOpen(service.run_port),
+      running: (await isPortOpen(service.run_port)) || (await isPortOpen(service.run_port, '::1')),
     })),
   );
 }
