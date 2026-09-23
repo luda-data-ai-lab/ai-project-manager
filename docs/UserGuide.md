@@ -113,6 +113,8 @@ npm run seed
 - **최근 변경:** 최근 7일 동안 변경된 작업, 중단·재개 메모, 프로젝트를 최신순으로 보여 줍니다.
   기본으로 5건만 표시되며 `더 보기 (N)`을 누르면 나머지가 펼쳐지고 `접기`로 다시 줄일 수 있습니다.
 - **마감 임박:** 완료·중단 상태가 아니면서 목표일이 7일 이내인 프로젝트를 표시합니다.
+- **서비스 포트:** 설정 탭 실행 포트가 등록된 프로젝트 목록입니다. 로컬에서 포트가 열려
+  있으면 녹색(실행 중), 닫혀 있으면 회색(정지)으로 표시되며 새로고침 버튼으로 다시 확인합니다.
 - **일정 캘린더:** 프로젝트 시작일(`시작`), 목표일(`목표`), 완료되지 않은 작업의 마감일
   (`작업 마감`)을 표시합니다.
 
@@ -432,6 +434,7 @@ API 응답은 일반적으로 `{ success: true, data }` 또는 `{ success: false
 | 비용 | `GET/POST /api/costs`, `PUT/DELETE /api/costs/:id`, `GET /api/costs/summary` |
 | 통합 검색 | `GET /api/search?q=&type=&project=` |
 | 대시보드 | `GET /api/dashboard` |
+| 서비스 포트 | `GET /api/services` |
 | 터미널 상태 | `GET /api/terminal/status` |
 | 백업/복원 | `GET /api/export`, `GET /api/export/projects/:id`, `POST /api/import?mode=merge\|replace` |
 | 상태 확인 | `GET /api/health` |
