@@ -93,143 +93,206 @@ function clipToRect(from, to) {
   return { x: to.x - dx * scale, y: to.y - dy * scale };
 }
 
+function RelationGraph({ nodes, edges }) {
+  const { linked, unlinked, positions, width, height } = useMemo(() => {
+    const linkedIds = new Set(edges.flatMap((edge) => [edge.source_id, edge.target_id]));
+    const linked = nodes.filter((node) => linkedIds.has(node.id));
+    const unlinked = nodes.filter((node) => !linkedIds.has(node.id));
+    return { linked, unlinked, ...layout(linked, edges) };
+  }, [nodes, edges]);
+
+  return (
+    <>
+      {!edges.length ? (
+        <EmptyState>등록된 프로젝트 관계가 없습니다.</EmptyState>
+      ) : (
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="mx-auto h-auto w-full"
+          style={{ maxWidth: width }}
+          role="img"
+          aria-label="프로젝트 관계도"
+        >
+          <defs>
+            <marker
+              id="relation-arrow"
+              viewBox="0 0 10 10"
+              refX="9"
+              refY="5"
+              markerWidth="7"
+              markerHeight="7"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
+            </marker>
+          </defs>
+          {edges.map((edge) => {
+            const source = positions.get(edge.source_id);
+            const target = positions.get(edge.target_id);
+            if (!source || !target) return null;
+            const color = relationColors[edge.relation_type];
+            const start = clipToRect(target, source);
+            const end = clipToRect(source, target);
+            const midX = (start.x + end.x) / 2;
+            const midY = (start.y + end.y) / 2;
+            const label = edge.label || relationLabels[edge.relation_type];
+            return (
+              <g key={edge.id}>
+                <line
+                  x1={start.x}
+                  y1={start.y}
+                  x2={end.x}
+                  y2={end.y}
+                  stroke={color}
+                  strokeWidth="2"
+                  markerEnd="url(#relation-arrow)"
+                />
+                <rect
+                  x={midX - label.length * 3.5 - 4}
+                  y={midY - 9}
+                  width={label.length * 7 + 8}
+                  height="18"
+                  rx="4"
+                  fill="white"
+                  fillOpacity="0.9"
+                />
+                <text
+                  x={midX}
+                  y={midY + 4}
+                  textAnchor="middle"
+                  className="fill-slate-500 text-[12px]"
+                >
+                  {label}
+                </text>
+              </g>
+            );
+          })}
+          {linked.map((node) => {
+            const position = positions.get(node.id);
+            return (
+              <Link key={node.id} to={`/projects/${node.id}`}>
+                <rect
+                  x={position.x - 75}
+                  y={position.y - 26}
+                  width="150"
+                  height="52"
+                  rx="12"
+                  fill="white"
+                  stroke={statusColors[node.status] || '#94a3b8'}
+                  strokeWidth="3"
+                />
+                <text
+                  x={position.x}
+                  y={position.y + 5}
+                  textAnchor="middle"
+                  className="fill-slate-800 text-sm"
+                >
+                  {node.name.length > 18 ? `${node.name.slice(0, 17)}…` : node.name}
+                </text>
+              </Link>
+            );
+          })}
+        </svg>
+      )}
+      {unlinked.length > 0 && (
+        <div className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-500">
+          <span className="mr-2 font-medium">관계 없는 프로젝트 ({unlinked.length})</span>
+          {unlinked.map((node) => (
+            <Link
+              key={node.id}
+              to={`/projects/${node.id}`}
+              className="mr-2 inline-block rounded bg-slate-100 px-2 py-0.5 hover:bg-slate-200"
+            >
+              {node.name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function Legend({ className = '' }) {
+  return (
+    <div className={`flex flex-wrap gap-4 text-sm text-slate-600 ${className}`}>
+      {Object.entries(relationLabels).map(([type, label]) => (
+        <div key={type} className="flex items-center gap-2">
+          <span
+            className="h-3 w-3 rounded-full"
+            style={{ backgroundColor: relationColors[type] }}
+          />
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const modes = [
+  ['all', '전체'],
+  ['group', '그룹별'],
+];
+
 export default function RelationsPage() {
   const [graph, setGraph] = useState(null);
+  const [mode, setMode] = useState('all');
   useEffect(() => {
     api('/relations/graph')
       .then(setGraph)
       .catch(() => setGraph({ nodes: [], edges: [] }));
   }, []);
 
-  const { linked, unlinked, positions, width, height } = useMemo(() => {
-    if (!graph) return { linked: [], unlinked: [], positions: new Map(), width: 0, height: 0 };
-    const linkedIds = new Set(graph.edges.flatMap((edge) => [edge.source_id, edge.target_id]));
-    const linked = graph.nodes.filter((node) => linkedIds.has(node.id));
-    const unlinked = graph.nodes.filter((node) => !linkedIds.has(node.id));
-    return { linked, unlinked, ...layout(linked, graph.edges) };
+  const groups = useMemo(() => {
+    if (!graph) return [];
+    const names = [...new Set(graph.nodes.map((node) => node.group_name || '미분류'))].sort(
+      (a, b) => (a === '미분류' ? 1 : b === '미분류' ? -1 : a.localeCompare(b)),
+    );
+    return names.map((name) => {
+      const nodes = graph.nodes.filter((node) => (node.group_name || '미분류') === name);
+      const ids = new Set(nodes.map((node) => node.id));
+      const edges = graph.edges.filter(
+        (edge) => ids.has(edge.source_id) && ids.has(edge.target_id),
+      );
+      return { name, nodes, edges };
+    });
   }, [graph]);
 
   if (!graph) return <Spinner />;
   return (
     <>
-      <PageHeader title="관계도" description="프로젝트 간 의존성과 연결 관계를 확인하세요." />
-      {!graph.edges.length ? (
-        <EmptyState>등록된 프로젝트 관계가 없습니다.</EmptyState>
-      ) : (
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader title="관계도" description="프로젝트 간 의존성과 연결 관계를 확인하세요." />
+        <div className="flex shrink-0 rounded-lg border border-slate-200 bg-white p-1 text-sm">
+          {modes.map(([value, label]) => (
+            <button
+              key={value}
+              className={`rounded px-3 py-1 ${mode === value ? 'bg-slate-900 text-white' : 'text-slate-500'}`}
+              onClick={() => setMode(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {mode === 'all' ? (
         <Card>
-          <svg
-            viewBox={`0 0 ${width} ${height}`}
-            className="mx-auto h-auto w-full"
-            style={{ maxWidth: width }}
-            role="img"
-            aria-label="프로젝트 관계도"
-          >
-            <defs>
-              <marker
-                id="relation-arrow"
-                viewBox="0 0 10 10"
-                refX="9"
-                refY="5"
-                markerWidth="7"
-                markerHeight="7"
-                orient="auto-start-reverse"
-              >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
-              </marker>
-            </defs>
-            {graph.edges.map((edge) => {
-              const source = positions.get(edge.source_id);
-              const target = positions.get(edge.target_id);
-              if (!source || !target) return null;
-              const color = relationColors[edge.relation_type];
-              const start = clipToRect(target, source);
-              const end = clipToRect(source, target);
-              const midX = (start.x + end.x) / 2;
-              const midY = (start.y + end.y) / 2;
-              const label = edge.label || relationLabels[edge.relation_type];
-              return (
-                <g key={edge.id}>
-                  <line
-                    x1={start.x}
-                    y1={start.y}
-                    x2={end.x}
-                    y2={end.y}
-                    stroke={color}
-                    strokeWidth="2"
-                    markerEnd="url(#relation-arrow)"
-                  />
-                  <rect
-                    x={midX - label.length * 3.5 - 4}
-                    y={midY - 9}
-                    width={label.length * 7 + 8}
-                    height="18"
-                    rx="4"
-                    fill="white"
-                    fillOpacity="0.9"
-                  />
-                  <text
-                    x={midX}
-                    y={midY + 4}
-                    textAnchor="middle"
-                    className="fill-slate-500 text-[12px]"
-                  >
-                    {label}
-                  </text>
-                </g>
-              );
-            })}
-            {linked.map((node) => {
-              const position = positions.get(node.id);
-              return (
-                <Link key={node.id} to={`/projects/${node.id}`}>
-                  <rect
-                    x={position.x - 75}
-                    y={position.y - 26}
-                    width="150"
-                    height="52"
-                    rx="12"
-                    fill="white"
-                    stroke={statusColors[node.status] || '#94a3b8'}
-                    strokeWidth="3"
-                  />
-                  <text
-                    x={position.x}
-                    y={position.y + 5}
-                    textAnchor="middle"
-                    className="fill-slate-800 text-sm"
-                  >
-                    {node.name.length > 18 ? `${node.name.slice(0, 17)}…` : node.name}
-                  </text>
-                </Link>
-              );
-            })}
-          </svg>
-          <div className="mt-4 flex flex-wrap gap-4 border-t border-slate-100 pt-4 text-sm text-slate-600">
-            {Object.entries(relationLabels).map(([type, label]) => (
-              <div key={type} className="flex items-center gap-2">
-                <span
-                  className="h-3 w-3 rounded-full"
-                  style={{ backgroundColor: relationColors[type] }}
-                />
-                {label}
-              </div>
-            ))}
-          </div>
-          {unlinked.length > 0 && (
-            <div className="mt-4 border-t border-slate-100 pt-4 text-sm text-slate-500">
-              <span className="mr-2 font-medium">관계 없는 프로젝트 ({unlinked.length})</span>
-              {unlinked.map((node) => (
-                <Link
-                  key={node.id}
-                  to={`/projects/${node.id}`}
-                  className="mr-2 inline-block rounded bg-slate-100 px-2 py-0.5 hover:bg-slate-200"
-                >
-                  {node.name}
-                </Link>
-              ))}
-            </div>
-          )}
+          <RelationGraph nodes={graph.nodes} edges={graph.edges} />
+          <Legend className="mt-4 border-t border-slate-100 pt-4" />
         </Card>
+      ) : (
+        <div className="space-y-6">
+          {groups.map((group) => (
+            <Card key={group.name}>
+              <h2 className="mb-4 text-sm font-semibold text-slate-500">
+                {group.name} <span className="font-normal">({group.nodes.length})</span>
+              </h2>
+              <RelationGraph nodes={group.nodes} edges={group.edges} />
+            </Card>
+          ))}
+          <Card>
+            <Legend />
+          </Card>
+        </div>
       )}
     </>
   );
