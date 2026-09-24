@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createServer } from 'node:net';
 import { before, after, describe, it } from 'node:test';
 import request from 'supertest';
 
@@ -632,6 +633,50 @@ describe('DevTracker API', () => {
       graph.body.data.edges.some(
         (edge) => edge.source_id === projectId || edge.target_id === projectId,
       ),
+      false,
+    );
+  });
+  it('reports registered service ports as running or stopped', async () => {
+    const runningProject = await request(app).post('/api/projects').send({ name: '실행 서비스' });
+    const stoppedProject = await request(app).post('/api/projects').send({ name: '잘못된 포트' });
+    const listener = createServer();
+    await new Promise((resolve, reject) => {
+      listener.once('error', reject);
+      listener.listen(0, '127.0.0.1', resolve);
+    });
+    const port = listener.address().port;
+    let response = await request(app)
+      .put(`/api/projects/${runningProject.body.data.id}/env`)
+      .send({ run_port: port });
+    assert.equal(response.status, 200);
+    response = await request(app)
+      .put(`/api/projects/${stoppedProject.body.data.id}/env`)
+      .send({ run_port: 'abc' });
+    assert.equal(response.status, 200);
+    response = await request(app).get('/api/services');
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      response.body.data.find((service) => service.project_id === runningProject.body.data.id),
+      {
+        project_id: runningProject.body.data.id,
+        project_name: '실행 서비스',
+        project_status: 'planning',
+        run_port: port,
+        access_url: null,
+        running: true,
+      },
+    );
+    assert.equal(
+      response.body.data.some((service) => service.project_id === stoppedProject.body.data.id),
+      false,
+    );
+    await new Promise((resolve, reject) =>
+      listener.close((error) => (error ? reject(error) : resolve())),
+    );
+    response = await request(app).get('/api/services');
+    assert.equal(
+      response.body.data.find((service) => service.project_id === runningProject.body.data.id)
+        .running,
       false,
     );
   });

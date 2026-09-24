@@ -29,6 +29,7 @@ import { testRecordRoutes } from './routes/testRecords.js';
 import { projectRelationRoutes, relationRoutes } from './routes/relations.js';
 import { costRoutes } from './routes/costs.js';
 import { exportRoutes, importRoutes } from './routes/export.js';
+import { serviceRoutes } from './routes/services.js';
 
 export function createApp(db, search = searchService(db)) {
   const services = {
@@ -66,6 +67,7 @@ export function createApp(db, search = searchService(db)) {
   app.use('/api/export', exportRoutes(services));
   app.use('/api/import', importRoutes(services));
   app.use('/api/dashboard', dashboardRoutes(db));
+  app.use('/api/services', serviceRoutes(db));
   app.use(notFound);
   app.use(errorHandler);
   return app;
