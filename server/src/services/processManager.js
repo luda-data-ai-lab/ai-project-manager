@@ -10,6 +10,25 @@ const appendLog = (entry, text) => {
   if (entry.log.length > maxLogLines) entry.log.splice(0, entry.log.length - maxLogLines);
 };
 
+export const buildLauncher = (command, projectId = 'project') => {
+  const safeProjectId = String(projectId).replace(/[^a-zA-Z0-9_-]/g, '-');
+  const extension = process.platform === 'win32' ? 'ps1' : 'sh';
+  const scriptPath = `${os.tmpdir()}/devtracker-run-${safeProjectId}-${Date.now()}.${extension}`;
+  const normalizedCommand = String(command).replace(/\r\n?/g, '\n');
+  const content =
+    process.platform === 'win32'
+      ? `\uFEFF$ErrorActionPreference = 'Stop'\n${normalizedCommand}\n`
+      : `set -e\n${normalizedCommand}\n`;
+  fs.writeFileSync(scriptPath, content, 'utf8');
+  return process.platform === 'win32'
+    ? {
+        file: 'powershell.exe',
+        args: ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', scriptPath],
+        scriptPath,
+      }
+    : { file: 'bash', args: [scriptPath], scriptPath };
+};
+
 const killProcess = (child, signal) => {
   if (process.platform === 'win32') {
     const killer = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], {
@@ -41,14 +60,21 @@ export function processManager() {
     if (existing?.running) throw new Error('이미 실행 중입니다.');
     if (!String(command || '').trim()) throw new Error('실행 명령어가 설정되지 않았습니다.');
     const workingDirectory = cwd && fs.existsSync(cwd) ? cwd : os.homedir();
-    const child = spawn(command, {
-      cwd: workingDirectory,
-      shell: true,
-      env: process.env,
-      detached: process.platform !== 'win32',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
-    });
+    const launcher = buildLauncher(command, projectId);
+    let child;
+    try {
+      child = spawn(launcher.file, launcher.args, {
+        cwd: workingDirectory,
+        shell: false,
+        env: process.env,
+        detached: process.platform !== 'win32',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
+      });
+    } catch (error) {
+      fs.rmSync(launcher.scriptPath, { force: true });
+      throw error;
+    }
     const entry = {
       child,
       started_at: new Date().toISOString(),
@@ -74,6 +100,7 @@ export function processManager() {
       entry.running = false;
       entry.exited_at = new Date().toISOString();
       entry.exit_code = code ?? null;
+      fs.rmSync(launcher.scriptPath, { force: true });
     };
     child.once('exit', (code) => finish(code));
     child.once('error', (error) => {

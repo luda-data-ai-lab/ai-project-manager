@@ -20,13 +20,23 @@ export default function SettingsTab({ id, data, onSaved }) {
       <div className="space-y-3">
         {fields.map(([key, label, placeholder, type = 'text']) => (
           <Field key={key} label={label}>
-            <input
-              className={inputClass}
-              type={type}
-              placeholder={placeholder}
-              value={values[key] || ''}
-              onChange={(event) => setValues({ ...values, [key]: event.target.value })}
-            />
+            {type === 'textarea' ? (
+              <textarea
+                rows={3}
+                className={inputClass}
+                placeholder={placeholder}
+                value={values[key] || ''}
+                onChange={(event) => setValues({ ...values, [key]: event.target.value })}
+              />
+            ) : (
+              <input
+                className={inputClass}
+                type={type}
+                placeholder={placeholder}
+                value={values[key] || ''}
+                onChange={(event) => setValues({ ...values, [key]: event.target.value })}
+              />
+            )}
           </Field>
         ))}
       </div>
@@ -39,7 +49,12 @@ export default function SettingsTab({ id, data, onSaved }) {
     <div className="grid gap-5 lg:grid-cols-2">
       {form('실행 환경', env, setEnv, 'env', [
         ['source_folder', '소스 폴더'],
-        ['run_command', '실행 명령어'],
+        [
+          'run_command',
+          '실행 명령어',
+          '한 줄에 명령 하나씩 — 위에서부터 순서대로 실행됩니다',
+          'textarea',
+        ],
         ['run_port', '실행 포트', '3000'],
         ['access_url', '접속 URL'],
         ['runtime', '개발 환경'],
