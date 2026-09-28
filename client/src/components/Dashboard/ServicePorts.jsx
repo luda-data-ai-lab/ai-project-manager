@@ -1,4 +1,4 @@
-import { ExternalLink, Play, RefreshCw, ScrollText, Square } from 'lucide-react';
+import { ExternalLink, Play, RefreshCw, Square } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -8,7 +8,6 @@ import { api } from '../../utils/api';
 export default function ServicePorts() {
   const [services, setServices] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [expandedLogs, setExpandedLogs] = useState({});
   const load = async () => {
     setLoading(true);
     try {
@@ -34,19 +33,8 @@ export default function ServicePorts() {
   const stop = async (service) => {
     try {
       await api(`/services/${service.project_id}/stop`, { method: 'POST' });
+      toast.success('프로세스를 중지했습니다.');
       await load();
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
-  const toggleLogs = async (service) => {
-    if (expandedLogs[service.project_id]) {
-      setExpandedLogs({ ...expandedLogs, [service.project_id]: null });
-      return;
-    }
-    try {
-      const data = await api(`/services/${service.project_id}/logs`);
-      setExpandedLogs({ ...expandedLogs, [service.project_id]: data });
     } catch (error) {
       toast.error(error.message);
     }
@@ -127,25 +115,8 @@ export default function ServicePorts() {
                       실행
                     </Button>
                   ) : null}
-                  {service.process && (
-                    <Button
-                      variant="secondary"
-                      className="px-2 py-1 text-xs"
-                      onClick={() => toggleLogs(service)}
-                    >
-                      <ScrollText size={13} className="mr-1 inline" />
-                      로그
-                    </Button>
-                  )}
                 </div>
               </div>
-              {expandedLogs[service.project_id] && (
-                <pre className="mt-2 max-h-40 overflow-auto rounded bg-slate-900 p-2 text-xs text-slate-100">
-                  {expandedLogs[service.project_id].lines.join('\n')}
-                  {!expandedLogs[service.project_id].running &&
-                    `\n종료됨 (code ${expandedLogs[service.project_id].exit_code ?? '-'})`}
-                </pre>
-              )}
             </div>
           );
         })
