@@ -1,5 +1,5 @@
 import { ExternalLink, Play, RefreshCw, ScrollText, Square } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { Button, Card, EmptyState, Spinner } from '../common';
@@ -9,10 +9,30 @@ export default function ServicePorts() {
   const [services, setServices] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedLogs, setExpandedLogs] = useState({});
+  const expandedLogsRef = useRef(expandedLogs);
+  expandedLogsRef.current = expandedLogs;
+  const fetchLogs = (projectId) => api(`/services/${projectId}/logs`);
+  const refreshOpenLogs = async (list) => {
+    const open = expandedLogsRef.current;
+    const openIds = Object.keys(open).filter(
+      (id) => open[id] && list.some((service) => service.project_id === id),
+    );
+    if (!openIds.length) return;
+    const results = await Promise.all(openIds.map((id) => fetchLogs(id).catch(() => null)));
+    setExpandedLogs((previous) => {
+      const next = { ...previous };
+      openIds.forEach((id, index) => {
+        if (results[index]) next[id] = results[index];
+      });
+      return next;
+    });
+  };
   const load = async () => {
     setLoading(true);
     try {
-      setServices(await api('/services'));
+      const list = await api('/services');
+      setServices(list);
+      await refreshOpenLogs(list);
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -34,6 +54,7 @@ export default function ServicePorts() {
   const stop = async (service) => {
     try {
       await api(`/services/${service.project_id}/stop`, { method: 'POST' });
+      toast.success('프로세스를 중지했습니다.');
       await load();
     } catch (error) {
       toast.error(error.message);
@@ -45,7 +66,7 @@ export default function ServicePorts() {
       return;
     }
     try {
-      const data = await api(`/services/${service.project_id}/logs`);
+      const data = await fetchLogs(service.project_id);
       setExpandedLogs({ ...expandedLogs, [service.project_id]: data });
     } catch (error) {
       toast.error(error.message);
