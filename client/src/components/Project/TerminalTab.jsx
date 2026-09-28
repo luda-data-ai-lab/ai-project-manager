@@ -58,8 +58,14 @@ export default function TerminalTab({ projectId, env }) {
   }, [projectId, connectionKey]);
 
   const runCommand = () => {
-    if (env?.run_command && socketRef.current?.readyState === WebSocket.OPEN)
-      socketRef.current.send(JSON.stringify({ type: 'input', data: `${env.run_command}\r` }));
+    if (env?.run_command && socketRef.current?.readyState === WebSocket.OPEN) {
+      env.run_command
+        .split(/\r?\n/)
+        .filter((line) => line.trim())
+        .forEach((line) =>
+          socketRef.current.send(JSON.stringify({ type: 'input', data: `${line}\r` })),
+        );
+    }
   };
 
   return (

@@ -722,4 +722,30 @@ describe('DevTracker API', () => {
     assert.equal(response.status, 400);
     assert.equal(response.body.error, '실행 명령어가 설정되지 않았습니다.');
   });
+  it('runs multiline service commands sequentially', async () => {
+    const project = await request(app)
+      .post('/api/projects')
+      .send({ name: '여러 줄 실행 명령 프로젝트' });
+    processProjectId = project.body.data.id;
+    let response = await request(app)
+      .put(`/api/projects/${processProjectId}/env`)
+      .send({ run_command: 'echo first\necho second', run_port: 65533 });
+    assert.equal(response.status, 200);
+    response = await request(app).post(`/api/services/${processProjectId}/start`);
+    assert.equal(response.status, 200);
+    const deadline = Date.now() + 3000;
+    let status;
+    do {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      response = await request(app).get('/api/services');
+      status = response.body.data.find((item) => item.project_id === processProjectId)?.process;
+    } while (status?.running && Date.now() < deadline);
+    assert.equal(status?.running, false);
+    response = await request(app).get(`/api/services/${processProjectId}/logs`);
+    assert.equal(response.status, 200);
+    const lines = response.body.data.lines;
+    assert.ok(lines.includes('first'));
+    assert.ok(lines.includes('second'));
+    assert.ok(lines.indexOf('first') < lines.indexOf('second'));
+  });
 });
