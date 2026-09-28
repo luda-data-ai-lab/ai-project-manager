@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:net';
 import { before, after, describe, it } from 'node:test';
 import request from 'supertest';
+import { processManager } from '../src/services/processManager.js';
 
 let app;
 let db;
 let projectId;
+let processProjectId;
 before(async () => {
   process.env.DB_PATH = ':memory:';
   process.env.NODE_ENV = 'test';
@@ -16,7 +18,16 @@ before(async () => {
   const appModule = await import('../src/index.js');
   app = appModule.createApp(db);
 });
-after(async () => db.destroy());
+after(async () => {
+  if (processProjectId) {
+    try {
+      await processManager().stop(processProjectId);
+    } catch {
+      // The process may already have stopped during the test.
+    }
+  }
+  await db.destroy();
+});
 
 describe('DevTracker API', () => {
   it('creates, lists, filters, gets and updates projects', async () => {
@@ -664,6 +675,8 @@ describe('DevTracker API', () => {
         run_port: port,
         access_url: null,
         running: true,
+        can_start: false,
+        process: null,
       },
     );
     assert.equal(
@@ -679,5 +692,34 @@ describe('DevTracker API', () => {
         .running,
       false,
     );
+  });
+  it('starts and stops a project service process', async () => {
+    const project = await request(app).post('/api/projects').send({ name: '실행 명령 프로젝트' });
+    processProjectId = project.body.data.id;
+    let response = await request(app)
+      .put(`/api/projects/${processProjectId}/env`)
+      .send({ run_command: 'node -e "setInterval(()=>{},1000)"', run_port: 65534 });
+    assert.equal(response.status, 200);
+    response = await request(app).post(`/api/services/${processProjectId}/start`);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.running, true);
+    assert.equal(typeof response.body.data.pid, 'number');
+    response = await request(app).post(`/api/services/${processProjectId}/start`);
+    assert.equal(response.status, 400);
+    response = await request(app).get('/api/services');
+    const service = response.body.data.find((item) => item.project_id === processProjectId);
+    assert.equal(service.process.running, true);
+    assert.equal(service.can_start, true);
+    response = await request(app).get(`/api/services/${processProjectId}/logs`);
+    assert.deepEqual(response.body.data.lines, []);
+    response = await request(app).post(`/api/services/${processProjectId}/stop`);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.data.running, false);
+    const noCommandProject = await request(app)
+      .post('/api/projects')
+      .send({ name: '실행 명령 없음' });
+    response = await request(app).post(`/api/services/${noCommandProject.body.data.id}/start`);
+    assert.equal(response.status, 400);
+    assert.equal(response.body.error, '실행 명령어가 설정되지 않았습니다.');
   });
 });
