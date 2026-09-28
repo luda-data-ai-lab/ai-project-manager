@@ -17,7 +17,7 @@ export const buildLauncher = (command, projectId = 'project') => {
   const normalizedCommand = String(command).replace(/\r\n?/g, '\n');
   const content =
     process.platform === 'win32'
-      ? `$ErrorActionPreference = 'Stop'\n${normalizedCommand}\n`
+      ? `\uFEFF$ErrorActionPreference = 'Stop'\n${normalizedCommand}\n`
       : `set -e\n${normalizedCommand}\n`;
   fs.writeFileSync(scriptPath, content, 'utf8');
   return process.platform === 'win32'
