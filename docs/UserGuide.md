@@ -115,6 +115,9 @@ npm run seed
 - **마감 임박:** 완료·중단 상태가 아니면서 목표일이 7일 이내인 프로젝트를 표시합니다.
 - **서비스 포트:** 설정 탭 실행 포트가 등록된 프로젝트 목록입니다. 로컬에서 포트가 열려
   있으면 녹색(실행 중), 닫혀 있으면 회색(정지)으로 표시되며 새로고침 버튼으로 다시 확인합니다.
+  실행 명령어가 설정된 정지 서비스는 소스 폴더에서 백그라운드로 실행하거나 중지할 수 있고,
+  이 앱이 실행한 프로세스의 로그를 볼 수 있습니다. 앱 서버를 재시작하면 기존 프로세스가
+  계속 실행 중이어도 목록에서 추적이 끊길 수 있습니다.
 - **일정 캘린더:** 프로젝트 시작일(`시작`), 목표일(`목표`), 완료되지 않은 작업의 마감일
   (`작업 마감`)을 표시합니다.
 
@@ -435,6 +438,9 @@ API 응답은 일반적으로 `{ success: true, data }` 또는 `{ success: false
 | 통합 검색 | `GET /api/search?q=&type=&project=` |
 | 대시보드 | `GET /api/dashboard` |
 | 서비스 포트 | `GET /api/services` |
+| 서비스 실행 | `POST /api/services/:id/start` |
+| 서비스 중지 | `POST /api/services/:id/stop` |
+| 서비스 로그 | `GET /api/services/:id/logs` |
 | 터미널 상태 | `GET /api/terminal/status` |
 | 백업/복원 | `GET /api/export`, `GET /api/export/projects/:id`, `POST /api/import?mode=merge\|replace` |
 | 상태 확인 | `GET /api/health` |

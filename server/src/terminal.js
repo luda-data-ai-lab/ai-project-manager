@@ -3,7 +3,7 @@ import os from 'node:os';
 import pty from 'node-pty';
 import { WebSocketServer } from 'ws';
 
-const LOOPBACK_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+export const LOOPBACK_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
 export function defaultShell(env = process.env, platform = process.platform) {
   if (env.SHELL) return env.SHELL;
