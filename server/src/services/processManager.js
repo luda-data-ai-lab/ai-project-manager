@@ -66,7 +66,7 @@ export function processManager() {
       child = spawn(launcher.file, launcher.args, {
         cwd: workingDirectory,
         shell: false,
-        env: process.env,
+        env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONIOENCODING: 'utf-8' },
         detached: process.platform !== 'win32',
         stdio: ['ignore', 'pipe', 'pipe'],
         windowsHide: true,
