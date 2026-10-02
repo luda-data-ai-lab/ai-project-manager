@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  Calculator,
   Mail,
   DatabaseBackup,
   FolderKanban,
@@ -19,6 +20,7 @@ export default function Layout({ children }) {
     ['/', '대시보드', BarChart3],
     ['/projects', '프로젝트', FolderKanban],
     ['/costs', '비용', Wallet],
+    ['/roi', 'AI ROI', Calculator],
     ['/relations', '관계도', Waypoints],
   ];
   return (

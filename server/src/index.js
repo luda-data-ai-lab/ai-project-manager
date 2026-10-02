@@ -15,6 +15,7 @@ import { searchService } from './services/searchService.js';
 import { testRecordService } from './services/testRecordService.js';
 import { relationService } from './services/relationService.js';
 import { costService } from './services/costService.js';
+import { roiService } from './services/roiService.js';
 import { exportService } from './services/exportService.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { projectRoutes } from './routes/projects.js';
@@ -28,6 +29,7 @@ import { testRoutes } from './routes/tests.js';
 import { testRecordRoutes } from './routes/testRecords.js';
 import { projectRelationRoutes, relationRoutes } from './routes/relations.js';
 import { costRoutes } from './routes/costs.js';
+import { roiRoutes } from './routes/roi.js';
 import { exportRoutes, importRoutes } from './routes/export.js';
 import { serviceRoutes } from './routes/services.js';
 
@@ -43,6 +45,7 @@ export function createApp(db, search = searchService(db)) {
     tests: testRecordService(db),
     relations: relationService(db),
     costs: costService(db),
+    roi: roiService(db),
     exporter: exportService(db, search),
     db,
   };
@@ -64,6 +67,7 @@ export function createApp(db, search = searchService(db)) {
   app.use('/api/tests', testRecordRoutes(services));
   app.use('/api/relations', relationRoutes(services));
   app.use('/api/costs', costRoutes(services));
+  app.use('/api/roi', roiRoutes(services));
   app.use('/api/export', exportRoutes(services));
   app.use('/api/import', importRoutes(services));
   app.use('/api/dashboard', dashboardRoutes(db));

@@ -93,6 +93,7 @@ npm run seed
   일정 캘린더를 확인합니다.
 - **프로젝트:** 프로젝트를 카드 또는 목록으로 조회하고 생성·수정·삭제합니다.
 - **비용:** AI 도구, 서버, 기타 비용을 기간별로 집계하고 관리합니다.
+- **AI ROI:** 현재 SaaS·시스템 유지비와 AI로 직접 개발할 때의 비용 및 절감 효과를 비교합니다.
 - **관계도:** 프로젝트 간 관계를 SVG 그래프로 확인합니다.
 - **검색:** 프로젝트, 작업, 프롬프트, 문서, 이슈를 통합 검색합니다.
 - **백업:** 전체 또는 프로젝트별 JSON/Markdown을 내보내고 JSON을 복원합니다.
@@ -367,6 +368,23 @@ Windows는 PowerShell, Linux/macOS는 bash 스크립트로 위에서부터 순�
 프로젝트 상세 개요에 표시되는 비용 합계는 해당 프로젝트의 전체 기간 기록을 통화별로 합산한
 값이며, 클릭하면 `/costs?project=<프로젝트 ID>`로 이동합니다.
 
+### 8.1 AI ROI 계산기
+
+AI ROI 화면은 SaaS 구독 또는 자체 시스템 유지보수 항목마다 현재 월 비용, AI로 개발할 때의
+초기 개발비와 월 운영비를 비교합니다. 선택적으로 프로젝트를 연결하고, 기존 방식으로 개발할
+때의 견적과 메모를 기록할 수 있습니다. 비교 기간은 1년, 3년, 5년 중 선택합니다.
+
+- 월 절감액은 `현재 월 비용 - AI 개발 후 월 운영비`, 연간 절감액은 월 절감액에 12를 곱합니다.
+- 선택한 기간의 현재 총비용은 `현재 월 비용 × 12 × 기간`, AI 총비용은
+  `AI 초기 개발비 + AI 월 운영비 × 12 × 기간`입니다. 순이익은 현재 총비용에서 AI 총비용을
+  뺀 값이며, ROI는 순이익을 AI 초기 개발비로 나눈 백분율입니다.
+- 투자 회수 기간은 AI 초기 개발비를 월 절감액으로 나눈 개월 수입니다. 월 절감액이 0 이하이면
+  비용을 줄이지 못하므로 **회수 불가**로 표시합니다. 초기 개발비가 0이고 월 절감액이 양수이면
+  `즉시` 회수로 표시합니다.
+- 기존 방식 개발 견적을 입력하면 해당 견적에서 AI 초기 개발비를 뺀 개발비 절감액도 표시됩니다.
+
+이 화면의 모든 비용은 원화(KRW) 기준이며 통화 선택이나 환산은 지원하지 않습니다.
+
 ## 9. 관계도
 
 ![프로젝트 관계도](images/15-relations-graph.png)
@@ -442,6 +460,7 @@ API 응답은 일반적으로 `{ success: true, data }` 또는 `{ success: false
 | 관계 | `GET/POST /api/projects/:id/relations`, `DELETE /api/relations/:id` |
 | 관계도 | `GET /api/relations/graph` |
 | 비용 | `GET/POST /api/costs`, `PUT/DELETE /api/costs/:id`, `GET /api/costs/summary` |
+| AI ROI | `GET /api/roi`, `GET /api/roi/summary?years=`, `POST /api/roi`, `PUT/DELETE /api/roi/:id` |
 | 통합 검색 | `GET /api/search?q=&type=&project=` |
 | 대시보드 | `GET /api/dashboard` |
 | 서비스 포트 | `GET /api/services` |
@@ -514,3 +533,4 @@ npm run seed
 | 관계 유형 | `depends_on`, `shares_module`, `uses_api`, `precedes` |
 | 비용 분류 | `ai_tool`, `server`, `other` |
 | 통화 | `KRW`, `USD` |
+| ROI 항목 유형 | `saas`, `system` |

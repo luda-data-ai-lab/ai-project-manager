@@ -7,6 +7,7 @@ import ProjectsPage from './pages/ProjectsPage';
 import SearchPage from './pages/SearchPage';
 import RelationsPage from './pages/RelationsPage';
 import CostsPage from './pages/CostsPage';
+import RoiPage from './pages/RoiPage';
 import BackupPage from './pages/BackupPage';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/search" element={<SearchPage />} />
           <Route path="/relations" element={<RelationsPage />} />
           <Route path="/costs" element={<CostsPage />} />
+          <Route path="/roi" element={<RoiPage />} />
           <Route path="/backup" element={<BackupPage />} />
         </Routes>
       </Layout>
