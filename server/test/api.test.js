@@ -400,6 +400,92 @@ describe('DevTracker API', () => {
     assert.equal(response.body.data.length, 0);
     assert.equal(otherProject.body.data.name, '비용 프로젝트');
   });
+  it('calculates AI ROI, validates items, and supports CRUD and export', async () => {
+    const createdIds = [];
+    try {
+      let response = await request(app).post('/api/roi').send({
+        item_type: 'saas',
+        name: 'Notion',
+        current_monthly_cost: 1_000_000,
+        ai_build_cost: 6_000_000,
+        ai_monthly_cost: 200_000,
+        traditional_build_cost: 30_000_000,
+        project_id: projectId,
+      });
+      assert.equal(response.status, 201);
+      const saasId = response.body.data.id;
+      createdIds.push(saasId);
+      assert.equal(response.body.data.project_name, '테스트');
+
+      response = await request(app).get('/api/roi/summary?years=3');
+      assert.equal(response.status, 200);
+      const saas = response.body.data.items.find((item) => item.id === saasId);
+      assert.equal(saas.monthly_saving, 800_000);
+      assert.equal(saas.annual_saving, 9_600_000);
+      assert.equal(saas.current_total, 36_000_000);
+      assert.equal(saas.ai_total, 13_200_000);
+      assert.equal(saas.net_benefit, 22_800_000);
+      assert.equal(saas.roi_percent, 380);
+      assert.equal(saas.payback_months, 7.5);
+      assert.equal(saas.build_saving, 24_000_000);
+      assert.equal(response.body.data.yearly.length, 3);
+      assert.deepEqual(response.body.data.yearly[0], {
+        year: 1,
+        current_cumulative: 12_000_000,
+        ai_cumulative: 8_400_000,
+      });
+
+      response = await request(app).post('/api/roi').send({
+        item_type: 'system',
+        name: '사내 ERP',
+        current_monthly_cost: 100_000,
+        ai_build_cost: 0,
+        ai_monthly_cost: 300_000,
+      });
+      assert.equal(response.status, 201);
+      const systemId = response.body.data.id;
+      createdIds.push(systemId);
+
+      response = await request(app).get('/api/roi/summary?years=3');
+      const system = response.body.data.items.find((item) => item.id === systemId);
+      assert.equal(system.payback_months, null);
+      assert.equal(system.roi_percent, null);
+      assert.equal(system.net_benefit, -7_200_000);
+      assert.equal(response.body.data.totals.monthly_saving, 600_000);
+      assert.equal(response.body.data.totals.net_benefit, 15_600_000);
+      assert.equal(response.body.data.totals.roi_percent, 260);
+      assert.equal(response.body.data.totals.payback_months, 10);
+      assert.equal(response.body.data.totals.build_saving, 24_000_000);
+
+      for (const invalid of [
+        { current_monthly_cost: 1 },
+        { name: '음수', current_monthly_cost: -1 },
+        { name: '잘못된 유형', item_type: 'x' },
+        { name: '없는 프로젝트', project_id: 'missing-project' },
+      ]) {
+        response = await request(app).post('/api/roi').send(invalid);
+        assert.equal(response.status, 400);
+      }
+      response = await request(app).get('/api/roi/summary?years=0');
+      assert.equal(response.status, 400);
+
+      response = await request(app).put(`/api/roi/${saasId}`).send({ name: 'Notion AI 대체' });
+      assert.equal(response.status, 200);
+      assert.equal(response.body.data.name, 'Notion AI 대체');
+      response = await request(app).get('/api/export');
+      assert.equal(response.status, 200);
+      assert.ok(Array.isArray(response.body.roi_items));
+      assert.ok(response.body.roi_items.some((item) => item.id === saasId));
+
+      response = await request(app).delete(`/api/roi/${saasId}`);
+      assert.equal(response.status, 200);
+      createdIds.splice(createdIds.indexOf(saasId), 1);
+      response = await request(app).delete(`/api/roi/${saasId}`);
+      assert.equal(response.status, 404);
+    } finally {
+      for (const id of createdIds) await db('roi_items').where({ id }).del();
+    }
+  });
   it('searches indexed entities and updates the index', async () => {
     const searchProject = await request(app).post('/api/projects').send({
       name: '통합검색 프로젝트',
@@ -482,6 +568,7 @@ describe('DevTracker API', () => {
       'deploy_infos',
       'test_records',
       'costs',
+      'roi_items',
       'project_relations',
     ])
       assert.ok(Array.isArray(exportResponse.body[table]));

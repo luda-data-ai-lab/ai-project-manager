@@ -12,6 +12,7 @@ const tables = [
   'deploy_infos',
   'test_records',
   'costs',
+  'roi_items',
   'project_relations',
 ];
 
@@ -86,7 +87,11 @@ export function exportService(db, search) {
               .map((column) => [column, row[column]]),
           );
           if (!values.id) continue;
-          if (table === 'costs' && values.project_id !== null && values.project_id !== undefined) {
+          if (
+            (table === 'costs' || table === 'roi_items') &&
+            values.project_id !== null &&
+            values.project_id !== undefined
+          ) {
             const project = await trx('projects').where({ id: values.project_id }).first();
             if (!project) continue;
           }

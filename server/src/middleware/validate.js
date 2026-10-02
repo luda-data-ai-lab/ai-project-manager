@@ -12,6 +12,7 @@ import {
   RELATION_TYPES,
   COST_CATEGORIES,
   CURRENCIES,
+  ROI_ITEM_TYPES,
 } from '../models/enums.js';
 const valid = (value, values) => value === undefined || values.includes(value);
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -76,5 +77,21 @@ export const validateCost = (body, partial = false) => {
   if (!partial && !monthPattern.test(body.period || '')) return '기간 형식은 YYYY-MM 입니다.';
   if (body.period !== undefined && !monthPattern.test(body.period))
     return '기간 형식은 YYYY-MM 입니다.';
+  return null;
+};
+export const validateRoiItem = (body, partial = false) => {
+  body ||= {};
+  if (!partial && !String(body.name || '').trim()) return '이름은 필수입니다.';
+  if (body.name !== undefined && !String(body.name).trim()) return '이름은 필수입니다.';
+  if (!valid(body.item_type, ROI_ITEM_TYPES)) return '유효하지 않은 항목 유형입니다.';
+  for (const column of ['current_monthly_cost', 'ai_build_cost', 'ai_monthly_cost'])
+    if (body[column] !== undefined && (!Number.isFinite(body[column]) || body[column] < 0))
+      return '비용은 0 이상의 숫자여야 합니다.';
+  if (
+    body.traditional_build_cost !== undefined &&
+    body.traditional_build_cost !== null &&
+    (!Number.isFinite(body.traditional_build_cost) || body.traditional_build_cost < 0)
+  )
+    return '비용은 0 이상의 숫자여야 합니다.';
   return null;
 };

@@ -18,3 +18,4 @@ export const TEST_RESULTS = ['pass', 'fail', 'untested'];
 export const RELATION_TYPES = ['depends_on', 'shares_module', 'uses_api', 'precedes'];
 export const COST_CATEGORIES = ['ai_tool', 'server', 'other'];
 export const CURRENCIES = ['KRW', 'USD'];
+export const ROI_ITEM_TYPES = ['saas', 'system'];
