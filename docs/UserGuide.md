@@ -79,14 +79,14 @@ npm run seed
 따라서 작업 중인 데이터를 보존해야 할 때는 먼저 백업하세요. 완전히 새 데이터베이스로
 시작하려면 기본 SQLite 파일을 삭제한 뒤 마이그레이션과 시드를 다시 실행합니다.
 
-기존 데이터를 삭제하지 않고 ROI 예제 항목만 추가하려면 `npm run seed:roi`를 실행하세요.
-이미 같은 이름의 ROI 항목이 있으면 중복으로 추가하지 않고 건너뜁니다.
-
 ```bash
 rm -f server/data/devtracker.db
 npm run migrate
 npm run seed
 ```
+
+기존 데이터를 삭제하지 않고 ROI 예제 항목만 추가하려면 `npm run seed:roi`를 실행하세요.
+이미 같은 이름의 ROI 항목이 있으면 중복으로 추가하지 않고 건너뜁니다.
 
 ## 3. 화면 구성
 
