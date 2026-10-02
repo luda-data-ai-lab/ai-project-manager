@@ -6,6 +6,7 @@
     "start": "node src/index.js",
     "migrate": "knex --knexfile knexfile.js migrate:latest",
     "seed": "knex --knexfile knexfile.js seed:run",
+    "seed:roi": "knex --knexfile knexfile.js seed:run --specific=002_roi_items.js",
     "test": "node --test"
   },
   "dependencies": {

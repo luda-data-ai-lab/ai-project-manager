@@ -4,6 +4,7 @@ export async function seed(knex) {
   await knex.raw('PRAGMA foreign_keys = OFF');
   for (const table of [
     'project_relations',
+    'roi_items',
     'costs',
     'test_records',
     'deploy_infos',
