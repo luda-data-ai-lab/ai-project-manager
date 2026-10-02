@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "test": "npm test -w server",
     "migrate": "npm run migrate -w server",
-    "seed": "npm run seed -w server"
+    "seed": "npm run seed -w server",
+    "seed:roi": "npm run seed:roi -w server"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
