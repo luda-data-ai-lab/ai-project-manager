@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { defaultShell } from '../src/terminal.js';
+import { defaultShell, isLocalRequest } from '../src/terminal.js';
 
 describe('defaultShell', () => {
   it('prefers SHELL when set', () => {
@@ -15,5 +15,23 @@ describe('defaultShell', () => {
   });
   it('falls back to bash elsewhere', () => {
     assert.equal(defaultShell({}, 'linux'), 'bash');
+  });
+});
+
+describe('isLocalRequest', () => {
+  it('allows loopback requests without forwarded headers', () => {
+    assert.equal(isLocalRequest({ socket: { remoteAddress: '127.0.0.1' }, headers: {} }), true);
+  });
+  it('rejects loopback requests with a forwarded header', () => {
+    assert.equal(
+      isLocalRequest({
+        socket: { remoteAddress: '127.0.0.1' },
+        headers: { 'x-forwarded-for': '1.2.3.4' },
+      }),
+      false,
+    );
+  });
+  it('rejects non-loopback requests', () => {
+    assert.equal(isLocalRequest({ socket: { remoteAddress: '1.2.3.4' }, headers: {} }), false);
   });
 });

@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
+import os from 'node:os';
+import path from 'node:path';
 import { before, after, describe, it } from 'node:test';
 import request from 'supertest';
 import { processManager } from '../src/services/processManager.js';
 
 let app;
 let db;
+let createApp;
 let projectId;
 let processProjectId;
 before(async () => {
@@ -16,7 +20,8 @@ before(async () => {
   db = knexModule.default(configModule.default);
   await db.migrate.latest();
   const appModule = await import('../src/index.js');
-  app = appModule.createApp(db);
+  createApp = appModule.createApp;
+  app = createApp(db);
 });
 after(async () => {
   if (processProjectId) {
@@ -787,6 +792,14 @@ describe('DevTracker API', () => {
       .put(`/api/projects/${processProjectId}/env`)
       .send({ run_command: 'node -e "setInterval(()=>{},1000)"', run_port: 65534 });
     assert.equal(response.status, 200);
+    response = await request(app)
+      .post(`/api/services/${processProjectId}/start`)
+      .set('X-Forwarded-For', '1.2.3.4');
+    assert.equal(response.status, 403);
+    response = await request(app)
+      .get(`/api/services/${processProjectId}/logs`)
+      .set('X-Real-IP', '1.2.3.4');
+    assert.equal(response.status, 403);
     response = await request(app).post(`/api/services/${processProjectId}/start`);
     assert.equal(response.status, 200);
     assert.equal(response.body.data.running, true);
@@ -834,5 +847,26 @@ describe('DevTracker API', () => {
     assert.ok(lines.includes('first'));
     assert.ok(lines.includes('second'));
     assert.ok(lines.indexOf('first') < lines.indexOf('second'));
+  });
+  it('serves production client routes without masking API not-found responses', async () => {
+    const clientDist = mkdtempSync(path.join(os.tmpdir(), 'devtracker-client-'));
+    try {
+      writeFileSync(path.join(clientDist, 'index.html'), '<!doctype html><div id="root">ok</div>');
+      const productionApp = createApp(db, undefined, { clientDist });
+      let response = await request(productionApp).get('/projects/abc');
+      assert.equal(response.status, 200);
+      assert.match(response.headers['content-type'], /text\/html/);
+      assert.match(response.text, /<div id="root">ok<\/div>/);
+      response = await request(productionApp).get('/api/nope');
+      assert.equal(response.status, 404);
+      assert.equal(response.body.success, false);
+      response = await request(productionApp).get('/api/health');
+      assert.equal(response.status, 200);
+      assert.equal(response.body.data.status, 'ok');
+      response = await request(app).get('/projects/abc');
+      assert.equal(response.status, 404);
+    } finally {
+      rmSync(clientDist, { recursive: true, force: true });
+    }
   });
 });

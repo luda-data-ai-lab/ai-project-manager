@@ -5,6 +5,15 @@ import { WebSocketServer } from 'ws';
 
 export const LOOPBACK_ADDRESSES = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
 
+export function isLocalRequest(request) {
+  const headers = request.headers || {};
+  return (
+    LOOPBACK_ADDRESSES.has(request.socket.remoteAddress) &&
+    headers['x-forwarded-for'] === undefined &&
+    headers['x-real-ip'] === undefined
+  );
+}
+
 export function defaultShell(env = process.env, platform = process.platform) {
   if (env.SHELL) return env.SHELL;
   if (platform === 'win32') return env.COMSPEC || 'powershell.exe';
@@ -16,7 +25,7 @@ export function attachTerminal(httpServer, db) {
 
   const wss = new WebSocketServer({ server: httpServer, path: '/api/terminal' });
   wss.on('connection', async (ws, request) => {
-    if (!LOOPBACK_ADDRESSES.has(request.socket.remoteAddress)) {
+    if (!isLocalRequest(request)) {
       ws.close(1008, 'Terminal is only available from localhost');
       return;
     }

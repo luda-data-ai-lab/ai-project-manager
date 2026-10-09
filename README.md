@@ -33,6 +33,7 @@ docs/             기획 및 개발 명세
 ## 문서
 
 - [사용자 매뉴얼](docs/UserGuide.md) — 설치, 화면별 사용법, 백업, 문제 해결
+- [서버 배포 가이드](docs/Deploy.md) — AWS EC2, NGINX Basic Auth, PM2, HTTPS 설정
 - [개발 명세](docs/Spec.md)
 - [Devin 작업 기록](docs/Devin.md)
 
