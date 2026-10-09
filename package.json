@@ -10,6 +10,7 @@
     "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "test": "npm test -w server",

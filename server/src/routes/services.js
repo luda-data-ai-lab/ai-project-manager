@@ -1,12 +1,11 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/asyncHandler.js';
-import { LOOPBACK_ADDRESSES } from '../terminal.js';
+import { isLocalRequest } from '../terminal.js';
 import { processManager } from '../services/processManager.js';
 import { serviceStatusService } from '../services/serviceStatusService.js';
 
-const isLoopback = (request) => LOOPBACK_ADDRESSES.has(request.socket.remoteAddress);
 const localOnly = (request, response) => {
-  if (isLoopback(request)) return true;
+  if (isLocalRequest(request)) return true;
   response.status(403).json({ success: false, error: '로컬에서만 사용할 수 있습니다.' });
   return false;
 };

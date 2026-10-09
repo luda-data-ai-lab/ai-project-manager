@@ -14,6 +14,10 @@ export default [
     rules: { 'no-unused-vars': ['error', { argsIgnorePattern: '^_' }] },
   },
   {
+    files: ['**/*.cjs'],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'commonjs', globals: globals.node },
+  },
+  {
     files: ['client/**/*.{js,jsx}'],
     languageOptions: {
       ecmaVersion: 'latest',

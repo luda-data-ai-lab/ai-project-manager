@@ -1,6 +1,9 @@
 import cors from 'cors';
 import express from 'express';
+import fs from 'node:fs';
 import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import knex from 'knex';
 import config from '../knexfile.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
@@ -33,7 +36,7 @@ import { roiRoutes } from './routes/roi.js';
 import { exportRoutes, importRoutes } from './routes/export.js';
 import { serviceRoutes } from './routes/services.js';
 
-export function createApp(db, search = searchService(db)) {
+export function createApp(db, search = searchService(db), { clientDist } = {}) {
   const services = {
     projects: projectService(db, search),
     tasks: taskService(db, search),
@@ -72,6 +75,17 @@ export function createApp(db, search = searchService(db)) {
   app.use('/api/import', importRoutes(services));
   app.use('/api/dashboard', dashboardRoutes(db));
   app.use('/api/services', serviceRoutes(db));
+  if (clientDist) {
+    const indexPath = path.join(clientDist, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      const staticFiles = express.static(clientDist);
+      app.use((request, response, next) => {
+        if (request.path === '/api' || request.path.startsWith('/api/')) return next();
+        return staticFiles(request, response, next);
+      });
+      app.get(/^\/(?!api(?:\/|$)).*/, (_request, response) => response.sendFile(indexPath));
+    }
+  }
   app.use(notFound);
   app.use(errorHandler);
   return app;
@@ -79,14 +93,25 @@ export function createApp(db, search = searchService(db)) {
 const db = knex(config);
 if (process.env.NODE_ENV !== 'test') {
   const search = searchService(db);
-  const app = createApp(db, search);
+  const serverDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const app = createApp(
+    db,
+    search,
+    process.env.NODE_ENV === 'production'
+      ? { clientDist: path.resolve(serverDirectory, '../client/dist') }
+      : {},
+  );
   const server = http.createServer(app);
   attachTerminal(server, db);
   const port = Number(process.env.PORT || 3001);
   db.migrate
     .latest()
     .then(() => search.reindex())
-    .then(() => server.listen(port, () => console.log(`AI DevTracker server listening on ${port}`)))
+    .then(() =>
+      server.listen(port, process.env.HOST || undefined, () =>
+        console.log(`AI DevTracker server listening on ${port}`),
+      ),
+    )
     .catch((error) => {
       console.error('Failed to start server', error);
       process.exitCode = 1;

@@ -44,6 +44,7 @@ Vite 개발 서버는 5173 포트에서 실행되며 `/api` 요청을 API 서버
 지정하세요. 서버와 Vite 프록시가 같은 `.env`를 읽으므로 한 곳만 바꾸면 됩니다
 (`.env.example` 참고). 값을 바꾼 뒤에는 `npm run dev`를 다시 시작합니다.
 서버가 시작될 때 최신 마이그레이션과 검색 인덱스 재생성이 자동으로 수행됩니다.
+AWS EC2 배포는 [서버 배포 가이드](Deploy.md)를 참고하세요.
 
 ### 환경 변수
 
@@ -52,11 +53,12 @@ Vite 개발 서버는 5173 포트에서 실행되며 `/api` 요청을 API 서버
 | 변수 | 기본값/예시 | 설명 |
 | --- | --- | --- |
 | `PORT` | `3001` | Express API 서버 포트 |
+| `HOST` | 미설정 | 지정하면 해당 주소에만 서버를 바인딩합니다. 서버 배포 시 `127.0.0.1`로 설정해 NGINX를 통해서만 받도록 할 수 있습니다. |
 | `DB_PATH` | `./data/devtracker.db` | SQLite 파일 경로. `:memory:`도 테스트에 사용할 수 있습니다. |
 | `CLIENT_ORIGIN` | `http://localhost:5173` | CORS에서 허용할 클라이언트 Origin |
 | `TERMINAL_ENABLED` | 미설정(활성) | `false`로 설정하면 터미널 WebSocket을 비활성화 |
 | `SHELL` | 운영체제 기본 셸 | 터미널 탭에서 실행할 셸. 미설정 시 Windows는 `COMSPEC`(cmd.exe), 그 외는 `bash` |
-| `NODE_ENV` | 미설정 | `test`이면 서버를 직접 listen하지 않음 |
+| `NODE_ENV` | 미설정 | `test`이면 서버를 직접 listen하지 않고, `production`이면 빌드된 `client/dist` 화면을 함께 제공합니다. |
 
 예를 들어 별도 데이터베이스와 포트로 서버를 실행할 수 있습니다.
 
